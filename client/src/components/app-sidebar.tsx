@@ -1,5 +1,5 @@
 import { useLocation, Link } from "wouter";
-import { Calendar, Users, Briefcase, BarChart3, UserCog, LogOut, Sparkles } from "lucide-react";
+import { CalendarDays, UserRoundSearch, Scissors, TrendingUp, UsersRound, LogOut, Sparkles } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import {
   Sidebar,
@@ -17,11 +17,11 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
 const menuItems = [
-  { title: "Календарь", url: "/", icon: Calendar },
-  { title: "Клиенты", url: "/clients", icon: Users },
-  { title: "Услуги", url: "/services", icon: Briefcase },
-  { title: "Аналитика", url: "/analytics", icon: BarChart3 },
-  { title: "Сотрудники", url: "/employees", icon: UserCog },
+  { title: "Календарь", url: "/", icon: CalendarDays, color: "text-emerald-500" },
+  { title: "Клиенты", url: "/clients", icon: UserRoundSearch, color: "text-blue-500" },
+  { title: "Услуги", url: "/services", icon: Scissors, color: "text-pink-500" },
+  { title: "Аналитика", url: "/analytics", icon: TrendingUp, color: "text-amber-500" },
+  { title: "Сотрудники", url: "/employees", icon: UsersRound, color: "text-purple-500" },
 ];
 
 export function AppSidebar() {
@@ -60,7 +60,7 @@ export function AppSidebar() {
                     isActive={location === item.url}
                   >
                     <Link href={item.url} data-testid={`nav-${item.url.replace("/", "") || "home"}`}>
-                      <item.icon className="h-4 w-4" />
+                      <item.icon className={`h-5 w-5 ${item.color}`} />
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
