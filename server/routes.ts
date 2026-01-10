@@ -160,8 +160,15 @@ export async function registerRoutes(
   });
 
   app.delete("/api/clients/:id", requireAdmin, async (req, res) => {
-    await storage.deleteClient(req.params.id);
-    res.json({ success: true });
+    try {
+      await storage.deleteClient(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      if (error.code === '23503') {
+        return res.status(400).json({ error: "Нельзя удалить клиента с записями" });
+      }
+      res.status(500).json({ error: "Internal server error" });
+    }
   });
 
   app.get("/api/services", requireAuth, async (req, res) => {
@@ -191,8 +198,15 @@ export async function registerRoutes(
   });
 
   app.delete("/api/services/:id", requireAdmin, async (req, res) => {
-    await storage.deleteService(req.params.id);
-    res.json({ success: true });
+    try {
+      await storage.deleteService(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      if (error.code === '23503') {
+        return res.status(400).json({ error: "Нельзя удалить услугу с записями" });
+      }
+      res.status(500).json({ error: "Internal server error" });
+    }
   });
 
   app.get("/api/records", requireAuth, async (req, res) => {
