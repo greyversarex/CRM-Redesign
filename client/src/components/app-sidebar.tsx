@@ -1,5 +1,5 @@
 import { useLocation, Link } from "wouter";
-import { CalendarDays, UserRoundSearch, Scissors, TrendingUp, UsersRound, LogOut, Sparkles } from "lucide-react";
+import { CalendarRange, Users2, Briefcase, LineChart, UserCog, LogOut, Sparkles } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import {
   Sidebar,
@@ -17,11 +17,11 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
 const menuItems = [
-  { title: "Календарь", url: "/", icon: CalendarDays, color: "text-emerald-500" },
-  { title: "Клиенты", url: "/clients", icon: UserRoundSearch, color: "text-blue-500" },
-  { title: "Услуги", url: "/services", icon: Scissors, color: "text-pink-500" },
-  { title: "Аналитика", url: "/analytics", icon: TrendingUp, color: "text-amber-500" },
-  { title: "Сотрудники", url: "/employees", icon: UsersRound, color: "text-purple-500" },
+  { title: "Календарь", url: "/", icon: CalendarRange, gradient: "from-emerald-400 to-teal-500", shadow: "shadow-emerald-500/30" },
+  { title: "Клиенты", url: "/clients", icon: Users2, gradient: "from-blue-400 to-indigo-500", shadow: "shadow-blue-500/30" },
+  { title: "Услуги", url: "/services", icon: Briefcase, gradient: "from-rose-400 to-pink-500", shadow: "shadow-rose-500/30" },
+  { title: "Аналитика", url: "/analytics", icon: LineChart, gradient: "from-amber-400 to-orange-500", shadow: "shadow-amber-500/30" },
+  { title: "Сотрудники", url: "/employees", icon: UserCog, gradient: "from-violet-400 to-purple-500", shadow: "shadow-violet-500/30" },
 ];
 
 export function AppSidebar() {
@@ -60,8 +60,10 @@ export function AppSidebar() {
                     isActive={location === item.url}
                   >
                     <Link href={item.url} data-testid={`nav-${item.url.replace("/", "") || "home"}`}>
-                      <item.icon className={`h-5 w-5 ${item.color}`} />
-                      <span>{item.title}</span>
+                      <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${item.gradient} flex items-center justify-center shadow-md ${item.shadow}`}>
+                        <item.icon className="h-4 w-4 text-white" />
+                      </div>
+                      <span className="font-medium">{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

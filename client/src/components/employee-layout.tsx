@@ -54,7 +54,7 @@ export function EmployeeLayout({ children }: EmployeeLayoutProps) {
           </div>
         </div>
       </header>
-      <main className="flex-1 overflow-auto bg-gradient-to-br from-emerald-50/50 via-background to-teal-50/30 dark:from-emerald-950/20 dark:via-background dark:to-teal-950/20">
+      <main className="flex-1 overflow-auto bg-gradient-to-br from-emerald-100 via-teal-50 to-cyan-100 dark:from-emerald-950/40 dark:via-teal-950/30 dark:to-cyan-950/40">
         {children}
       </main>
     </div>
