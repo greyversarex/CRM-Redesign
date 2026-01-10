@@ -1,11 +1,16 @@
-# CRM System Design Guidelines
+# U-sistem Design Guidelines
 
 ## Design Approach
 
-**Selected Approach:** Design System (Material Design-inspired)
-**Rationale:** This is a data-intensive business application requiring clarity, consistency, and efficient workflows. The design prioritizes function over form while maintaining professional polish.
+**Selected Approach:** Modern Gradient Design with Soft Colors
+**Rationale:** This is a data-intensive business application with a warm, approachable aesthetic. The design uses soft purple/violet gradients to create a pleasant, professional experience.
+
+**Brand:** U-sistem (formerly CRM Система)
+**Primary Colors:** Violet to purple gradient (262° hue)
 
 **Key Principles:**
+- Soft, gradient-based color palette with purple/violet tones
+- Pleasant, non-clinical aesthetic while maintaining professional functionality
 - Information hierarchy through typography and spacing
 - Consistent, predictable patterns across all screens
 - Efficient data entry and navigation
