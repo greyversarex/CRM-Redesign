@@ -23,13 +23,38 @@ export async function apiRequest(
   return res;
 }
 
+function buildUrl(queryKey: readonly unknown[]): string {
+  const [base, ...rest] = queryKey;
+  let url = String(base);
+  
+  for (const part of rest) {
+    if (typeof part === "object" && part !== null) {
+      const params = new URLSearchParams();
+      for (const [key, value] of Object.entries(part)) {
+        if (value !== undefined && value !== null) {
+          params.append(key, String(value));
+        }
+      }
+      const queryString = params.toString();
+      if (queryString) {
+        url += (url.includes("?") ? "&" : "?") + queryString;
+      }
+    } else if (part !== undefined && part !== null) {
+      url += "/" + String(part);
+    }
+  }
+  
+  return url;
+}
+
 type UnauthorizedBehavior = "returnNull" | "throw";
 export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey.join("/") as string, {
+    const url = buildUrl(queryKey);
+    const res = await fetch(url, {
       credentials: "include",
     });
 
@@ -47,7 +72,7 @@ export const queryClient = new QueryClient({
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: Infinity,
+      staleTime: 0,
       retry: false,
     },
     mutations: {

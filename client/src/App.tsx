@@ -3,26 +3,83 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider, useAuth } from "@/lib/auth";
+import { ThemeProvider } from "@/components/theme-provider";
+import { AdminLayout } from "@/components/admin-layout";
+import { EmployeeLayout } from "@/components/employee-layout";
+import LoginPage from "@/pages/login";
+import Dashboard from "@/pages/dashboard";
+import DayPage from "@/pages/day";
+import ClientsPage from "@/pages/clients";
+import ClientDetailPage from "@/pages/client-detail";
+import ServicesPage from "@/pages/services";
+import EmployeesPage from "@/pages/employees";
+import AnalyticsPage from "@/pages/analytics";
+import EmployeeDashboard from "@/pages/employee-dashboard";
 import NotFound from "@/pages/not-found";
+import { Loader2 } from "lucide-react";
 
-function Router() {
+function AdminRouter() {
   return (
-    <Switch>
-      {/* Add pages below */}
-      {/* <Route path="/" component={Home}/> */}
-      {/* Fallback to 404 */}
-      <Route component={NotFound} />
-    </Switch>
+    <AdminLayout>
+      <Switch>
+        <Route path="/" component={Dashboard} />
+        <Route path="/day/:date" component={DayPage} />
+        <Route path="/clients" component={ClientsPage} />
+        <Route path="/clients/:id" component={ClientDetailPage} />
+        <Route path="/services" component={ServicesPage} />
+        <Route path="/employees" component={EmployeesPage} />
+        <Route path="/analytics" component={AnalyticsPage} />
+        <Route component={NotFound} />
+      </Switch>
+    </AdminLayout>
   );
+}
+
+function EmployeeRouter() {
+  return (
+    <EmployeeLayout>
+      <Switch>
+        <Route path="/" component={EmployeeDashboard} />
+        <Route component={NotFound} />
+      </Switch>
+    </EmployeeLayout>
+  );
+}
+
+function AppContent() {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginPage />;
+  }
+
+  if (user.role === "admin") {
+    return <AdminRouter />;
+  }
+
+  return <EmployeeRouter />;
 }
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Router />
-      </TooltipProvider>
+      <ThemeProvider>
+        <TooltipProvider>
+          <AuthProvider>
+            <AppContent />
+          </AuthProvider>
+          <Toaster />
+        </TooltipProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
