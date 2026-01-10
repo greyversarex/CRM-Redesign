@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Lock, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import loginBg from "@assets/2023.11.28_1768087524627.jpg";
 
 const loginSchema = z.object({
   login: z.string().min(1, "Введите логин"),
@@ -47,12 +48,13 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 via-green-500/15 to-teal-500/20 dark:from-emerald-600/30 dark:via-green-600/20 dark:to-teal-600/25" />
-      <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-emerald-400/30 to-transparent rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-teal-400/30 to-transparent rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
-      <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-gradient-to-r from-green-400/20 to-emerald-400/20 rounded-full blur-2xl -translate-x-1/2 -translate-y-1/2" />
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${loginBg})` }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-br from-black/60 via-black/40 to-emerald-900/50" />
       
-      <Card className="w-full max-w-md relative z-10 shadow-xl border-0 bg-card/80 backdrop-blur-sm">
+      <Card className="w-full max-w-md relative z-10 shadow-2xl border-0 bg-card/90 backdrop-blur-md">
         <CardContent className="pt-8 pb-8 px-8">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-green-600 dark:from-emerald-400 dark:to-green-400 bg-clip-text text-transparent">
