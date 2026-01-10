@@ -81,7 +81,7 @@ export default function LoginPage() {
                         <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                           placeholder="Введите логин"
-                          className="pl-10 h-11 bg-background/50 border-border/50 focus:border-violet-400 focus:ring-violet-400/20"
+                          className="pl-10 bg-background/50 border-border/50"
                           data-testid="input-login"
                           {...field}
                         />
@@ -103,7 +103,7 @@ export default function LoginPage() {
                         <Input
                           type="password"
                           placeholder="Введите пароль"
-                          className="pl-10 h-11 bg-background/50 border-border/50 focus:border-violet-400 focus:ring-violet-400/20"
+                          className="pl-10 bg-background/50 border-border/50"
                           data-testid="input-password"
                           {...field}
                         />
@@ -115,7 +115,7 @@ export default function LoginPage() {
               />
               <Button
                 type="submit"
-                className="w-full h-11 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white shadow-lg shadow-violet-500/25 border-0"
+                className="w-full bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-lg shadow-violet-500/25 border-0"
                 disabled={isLoading}
                 data-testid="button-login"
               >
