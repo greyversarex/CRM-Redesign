@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Lock, User, Sparkles } from "lucide-react";
+import { Lock, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const loginSchema = z.object({
@@ -54,18 +54,10 @@ export default function LoginPage() {
       
       <Card className="w-full max-w-md relative z-10 shadow-xl border-0 bg-card/80 backdrop-blur-sm">
         <CardContent className="pt-8 pb-8 px-8">
-          <div className="text-center space-y-4 mb-8">
-            <div className="mx-auto w-20 h-20 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-violet-500/25">
-              <Sparkles className="h-10 w-10 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 dark:from-violet-400 dark:to-purple-400 bg-clip-text text-transparent">
-                U-sistem
-              </h1>
-              <p className="text-muted-foreground text-sm mt-2">
-                Система учета клиентов, услуг и финансов
-              </p>
-            </div>
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 dark:from-violet-400 dark:to-purple-400 bg-clip-text text-transparent">
+              U-sistem
+            </h1>
           </div>
 
           <Form {...form}>
@@ -124,11 +116,6 @@ export default function LoginPage() {
             </form>
           </Form>
 
-          <div className="mt-6 pt-6 border-t border-border/50">
-            <p className="text-center text-xs text-muted-foreground">
-              Управляйте бизнесом эффективно
-            </p>
-          </div>
         </CardContent>
       </Card>
     </div>

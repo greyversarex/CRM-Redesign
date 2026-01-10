@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -7,6 +8,7 @@ import { AuthProvider, useAuth } from "@/lib/auth";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AdminLayout } from "@/components/admin-layout";
 import { EmployeeLayout } from "@/components/employee-layout";
+import { WelcomeEffect } from "@/components/welcome-effect";
 import LoginPage from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
 import DayPage from "@/pages/day";
@@ -49,6 +51,15 @@ function EmployeeRouter() {
 
 function AppContent() {
   const { user, isLoading } = useAuth();
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [previousUser, setPreviousUser] = useState<typeof user>(null);
+
+  useEffect(() => {
+    if (user && user.role === "admin" && !previousUser) {
+      setShowWelcome(true);
+    }
+    setPreviousUser(user);
+  }, [user, previousUser]);
 
   if (isLoading) {
     return (
@@ -60,6 +71,15 @@ function AppContent() {
 
   if (!user) {
     return <LoginPage />;
+  }
+
+  if (showWelcome && user.role === "admin") {
+    return (
+      <WelcomeEffect 
+        userName={user.fullName} 
+        onComplete={() => setShowWelcome(false)} 
+      />
+    );
   }
 
   if (user.role === "admin") {
