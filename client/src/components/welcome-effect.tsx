@@ -26,7 +26,7 @@ export function WelcomeEffect({ userName, onComplete }: WelcomeEffectProps) {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.5 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-violet-600 via-purple-600 to-pink-500"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-emerald-600 via-green-600 to-teal-500"
         >
           <div className="absolute inset-0 overflow-hidden">
             {[...Array(20)].map((_, i) => (

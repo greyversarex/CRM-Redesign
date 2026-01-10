@@ -39,11 +39,11 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/20">
+          <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
             <Sparkles className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h2 className="font-bold text-lg bg-gradient-to-r from-violet-600 to-purple-600 dark:from-violet-400 dark:to-purple-400 bg-clip-text text-transparent">U-sistem</h2>
+            <h2 className="font-bold text-lg bg-gradient-to-r from-emerald-600 to-green-600 dark:from-emerald-400 dark:to-green-400 bg-clip-text text-transparent">U-sistem</h2>
             <p className="text-xs text-muted-foreground">Система учета</p>
           </div>
         </div>
@@ -73,7 +73,7 @@ export function AppSidebar() {
       <SidebarFooter className="border-t border-sidebar-border p-4">
         <div className="flex items-center gap-3">
           <Avatar>
-            <AvatarFallback className="bg-gradient-to-br from-violet-400 to-purple-500 text-white font-medium">
+            <AvatarFallback className="bg-gradient-to-br from-emerald-400 to-green-500 text-white font-medium">
               {initials}
             </AvatarFallback>
           </Avatar>
