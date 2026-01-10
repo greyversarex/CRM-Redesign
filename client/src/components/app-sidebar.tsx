@@ -1,5 +1,5 @@
 import { useLocation, Link } from "wouter";
-import { Calendar, Users, Briefcase, BarChart3, UserCog, LogOut } from "lucide-react";
+import { Calendar, Users, Briefcase, BarChart3, UserCog, LogOut, Sparkles } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import {
   Sidebar,
@@ -39,11 +39,11 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-            <Calendar className="h-5 w-5 text-primary-foreground" />
+          <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/20">
+            <Sparkles className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h2 className="font-semibold text-lg">CRM</h2>
+            <h2 className="font-bold text-lg bg-gradient-to-r from-violet-600 to-purple-600 dark:from-violet-400 dark:to-purple-400 bg-clip-text text-transparent">U-sistem</h2>
             <p className="text-xs text-muted-foreground">Система учета</p>
           </div>
         </div>
@@ -73,7 +73,7 @@ export function AppSidebar() {
       <SidebarFooter className="border-t border-sidebar-border p-4">
         <div className="flex items-center gap-3">
           <Avatar>
-            <AvatarFallback className="bg-primary/10 text-primary">
+            <AvatarFallback className="bg-gradient-to-br from-violet-400 to-purple-500 text-white font-medium">
               {initials}
             </AvatarFallback>
           </Avatar>
