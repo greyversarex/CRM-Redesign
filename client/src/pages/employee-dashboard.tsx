@@ -252,6 +252,12 @@ function RecordCard({ record, onStatusChange }: {
             <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
               <Calendar className="h-3 w-3" />
               <span>{format(new Date(record.date), "d MMMM yyyy", { locale: ru })}</span>
+              {record.time && (
+                <>
+                  <Clock className="h-3 w-3 ml-2" />
+                  <span className="font-medium">{record.time}</span>
+                </>
+              )}
             </div>
           </div>
           <div className="flex flex-col items-end gap-2">
