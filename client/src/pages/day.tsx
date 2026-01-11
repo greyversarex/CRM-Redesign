@@ -512,9 +512,6 @@ function FinanceTab({ date }: { date: string }) {
                   <div className="flex items-center gap-2 min-w-0 flex-1">
                     <span className="text-sm truncate">{income.name}</span>
                     {income.reminder && <Bell className="h-3 w-3 text-primary shrink-0" />}
-                    {income.recordId && (
-                      <Badge variant="outline" className="text-xs shrink-0">Авто</Badge>
-                    )}
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <span className="font-medium text-green-600">+{income.amount}</span>
@@ -548,7 +545,7 @@ function FinanceTab({ date }: { date: string }) {
             </div>
             <Dialog open={isExpenseDialogOpen} onOpenChange={setIsExpenseDialogOpen}>
               <DialogTrigger asChild>
-                <Button size="sm" data-testid="button-add-expense">
+                <Button size="sm" variant="destructive" data-testid="button-add-expense">
                   <Plus className="h-4 w-4 mr-1" />
                   Добавить
                 </Button>
@@ -608,6 +605,10 @@ function AnalyticsTab({ date }: { date: string }) {
     queryKey: ["/api/expenses", { date }],
   });
 
+  const { data: records = [] } = useQuery<RecordWithRelations[]>({
+    queryKey: ["/api/records", { date }],
+  });
+
   const totalIncome = incomes.reduce((sum, i) => sum + i.amount, 0);
   const totalExpense = expenses.reduce((sum, e) => sum + e.amount, 0);
   const result = totalIncome - totalExpense;
@@ -615,6 +616,17 @@ function AnalyticsTab({ date }: { date: string }) {
   const incomePercent = totalIncome + totalExpense > 0 
     ? Math.round((totalIncome / (totalIncome + totalExpense)) * 100) 
     : 0;
+
+  const completedRecords = records.filter(r => r.status === "done");
+  const employeeStats = completedRecords.reduce((acc, record) => {
+    const empId = record.employee.id;
+    if (!acc[empId]) {
+      acc[empId] = { name: record.employee.fullName, services: 0, revenue: 0 };
+    }
+    acc[empId].services += 1;
+    acc[empId].revenue += record.service.price;
+    return acc;
+  }, {} as Record<string, { name: string; services: number; revenue: number }>);
 
   return (
     <div className="space-y-6">
@@ -715,6 +727,44 @@ function AnalyticsTab({ date }: { date: string }) {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Сотрудники за день
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {Object.keys(employeeStats).length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+              <Users className="h-10 w-10 mb-2 opacity-50" />
+              <p className="text-sm">Нет выполненных услуг</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Сотрудник</TableHead>
+                  <TableHead className="text-center">Услуг</TableHead>
+                  <TableHead className="text-right">Сумма</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {Object.entries(employeeStats).map(([empId, stats]) => (
+                  <TableRow key={empId}>
+                    <TableCell className="font-medium">{stats.name}</TableCell>
+                    <TableCell className="text-center">{stats.services}</TableCell>
+                    <TableCell className="text-right font-medium text-green-600">
+                      {stats.revenue} сомони
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
