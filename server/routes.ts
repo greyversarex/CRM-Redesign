@@ -134,13 +134,23 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/users/:id/records-count", requireAdmin, async (req, res) => {
+    const count = await storage.getUserRecordsCount(req.params.id);
+    res.json({ count });
+  });
+
   app.delete("/api/users/:id", requireAdmin, async (req, res) => {
     try {
-      await storage.deleteUser(req.params.id);
+      const cascade = req.query.cascade === "true";
+      if (cascade) {
+        await storage.deleteUserWithRecords(req.params.id);
+      } else {
+        await storage.deleteUser(req.params.id);
+      }
       res.json({ success: true });
     } catch (error: any) {
       if (error.code === '23503') {
-        return res.status(400).json({ error: "Нельзя удалить сотрудника с записями" });
+        return res.status(400).json({ error: "Нельзя удалить сотрудника с записями", hasRecords: true });
       }
       res.status(500).json({ error: "Internal server error" });
     }

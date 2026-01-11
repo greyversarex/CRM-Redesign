@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { Plus, UserCog, Trash2, Shield, User, BarChart3 } from "lucide-react";
+import { Plus, UserCog, Trash2, Shield, User, BarChart3, AlertTriangle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -90,6 +90,9 @@ function EmployeeForm({ onSuccess }: { onSuccess: () => void }) {
 
 export default function EmployeesPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<UserType | null>(null);
+  const [recordsCount, setRecordsCount] = useState(0);
   const { toast } = useToast();
 
   const { data: users = [], isLoading } = useQuery<UserType[]>({
@@ -97,12 +100,37 @@ export default function EmployeesPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => apiRequest("DELETE", `/api/users/${id}`),
+    mutationFn: ({ id, cascade }: { id: string; cascade: boolean }) => 
+      apiRequest("DELETE", `/api/users/${id}?cascade=${cascade}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/records"] });
       toast({ title: "Сотрудник удален" });
+      setDeleteDialogOpen(false);
+      setUserToDelete(null);
+    },
+    onError: () => {
+      toast({ title: "Ошибка при удалении", variant: "destructive" });
     },
   });
+
+  async function handleDeleteClick(user: UserType) {
+    try {
+      const res = await fetch(`/api/users/${user.id}/records-count`, { credentials: "include" });
+      const data = await res.json();
+      setRecordsCount(data.count || 0);
+      setUserToDelete(user);
+      setDeleteDialogOpen(true);
+    } catch {
+      toast({ title: "Ошибка", variant: "destructive" });
+    }
+  }
+
+  function handleDelete(cascade: boolean) {
+    if (userToDelete) {
+      deleteMutation.mutate({ id: userToDelete.id, cascade });
+    }
+  }
 
   return (
     <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
@@ -183,7 +211,7 @@ export default function EmployeesPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => deleteMutation.mutate(user.id)}
+                        onClick={() => handleDeleteClick(user)}
                         data-testid={`button-delete-employee-${user.id}`}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -196,6 +224,59 @@ export default function EmployeesPage() {
           </Table>
         </Card>
       )}
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Удаление сотрудника
+            </DialogTitle>
+            <DialogDescription>
+              {userToDelete && (
+                <>
+                  Вы уверены, что хотите удалить сотрудника <strong>{userToDelete.fullName}</strong>?
+                  {recordsCount > 0 && (
+                    <span className="block mt-2 text-destructive">
+                      У этого сотрудника есть {recordsCount} записей.
+                    </span>
+                  )}
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col gap-2 sm:flex-row">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+              data-testid="button-cancel-delete"
+            >
+              Отмена
+            </Button>
+            {recordsCount > 0 ? (
+              <>
+                <Button
+                  variant="destructive"
+                  onClick={() => handleDelete(true)}
+                  disabled={deleteMutation.isPending}
+                  data-testid="button-delete-with-records"
+                >
+                  Удалить с записями
+                </Button>
+              </>
+            ) : (
+              <Button
+                variant="destructive"
+                onClick={() => handleDelete(false)}
+                disabled={deleteMutation.isPending}
+                data-testid="button-confirm-delete"
+              >
+                Удалить
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

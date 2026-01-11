@@ -88,6 +88,20 @@ export class DatabaseStorage implements IStorage {
     await db.delete(users).where(eq(users.id, id));
   }
 
+  async deleteUserWithRecords(id: string): Promise<void> {
+    const userRecords = await db.select().from(records).where(eq(records.employeeId, id));
+    for (const record of userRecords) {
+      await db.delete(incomes).where(eq(incomes.recordId, record.id));
+    }
+    await db.delete(records).where(eq(records.employeeId, id));
+    await db.delete(users).where(eq(users.id, id));
+  }
+
+  async getUserRecordsCount(id: string): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)::int` }).from(records).where(eq(records.employeeId, id));
+    return result[0]?.count || 0;
+  }
+
   async getClient(id: string): Promise<Client | undefined> {
     const [client] = await db.select().from(clients).where(eq(clients.id, id));
     return client || undefined;
