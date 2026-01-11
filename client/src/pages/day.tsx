@@ -437,15 +437,20 @@ function RecordsTab({ date }: { date: string }) {
   );
 }
 
-function IncomesTab({ date }: { date: string }) {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+function FinanceTab({ date }: { date: string }) {
+  const [isIncomeDialogOpen, setIsIncomeDialogOpen] = useState(false);
+  const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  const { data: incomes = [], isLoading } = useQuery<Income[]>({
+  const { data: incomes = [], isLoading: loadingIncomes } = useQuery<Income[]>({
     queryKey: ["/api/incomes", { date }],
   });
 
-  const deleteMutation = useMutation({
+  const { data: expenses = [], isLoading: loadingExpenses } = useQuery<Expense[]>({
+    queryKey: ["/api/expenses", { date }],
+  });
+
+  const deleteIncomeMutation = useMutation({
     mutationFn: (id: string) => apiRequest("DELETE", `/api/incomes/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/incomes"] });
@@ -453,95 +458,7 @@ function IncomesTab({ date }: { date: string }) {
     },
   });
 
-  if (isLoading) {
-    return <Skeleton className="h-40 w-full" />;
-  }
-
-  const total = incomes.reduce((sum, i) => sum + i.amount, 0);
-
-  return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <p className="text-sm text-muted-foreground">Общий доход</p>
-          <p className="text-2xl font-bold text-green-600">{total} сомони</p>
-        </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button data-testid="button-add-income">
-              <Plus className="h-4 w-4 mr-2" />
-              Добавить доход
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Новый доход</DialogTitle>
-            </DialogHeader>
-            <FinanceForm type="income" date={date} onSuccess={() => setIsDialogOpen(false)} />
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {incomes.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-            <TrendingUp className="h-12 w-12 mb-4 opacity-50" />
-            <p>Нет доходов за этот день</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Наименование</TableHead>
-              <TableHead className="text-right">Сумма</TableHead>
-              <TableHead className="w-10"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {incomes.map((income) => (
-              <TableRow key={income.id}>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    {income.name}
-                    {income.reminder && <Bell className="h-3 w-3 text-primary" />}
-                    {income.recordId && (
-                      <Badge variant="outline" className="text-xs">Авто</Badge>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell className="text-right font-medium text-green-600">
-                  +{income.amount} сомони
-                </TableCell>
-                <TableCell>
-                  {!income.recordId && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => deleteMutation.mutate(income.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
-    </div>
-  );
-}
-
-function ExpensesTab({ date }: { date: string }) {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { toast } = useToast();
-
-  const { data: expenses = [], isLoading } = useQuery<Expense[]>({
-    queryKey: ["/api/expenses", { date }],
-  });
-
-  const deleteMutation = useMutation({
+  const deleteExpenseMutation = useMutation({
     mutationFn: (id: string) => apiRequest("DELETE", `/api/expenses/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
@@ -549,77 +466,135 @@ function ExpensesTab({ date }: { date: string }) {
     },
   });
 
-  if (isLoading) {
-    return <Skeleton className="h-40 w-full" />;
-  }
-
-  const total = expenses.reduce((sum, e) => sum + e.amount, 0);
+  const totalIncome = incomes.reduce((sum, i) => sum + i.amount, 0);
+  const totalExpense = expenses.reduce((sum, e) => sum + e.amount, 0);
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <p className="text-sm text-muted-foreground">Общий расход</p>
-          <p className="text-2xl font-bold text-red-600">{total} сомони</p>
-        </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button data-testid="button-add-expense">
-              <Plus className="h-4 w-4 mr-2" />
-              Добавить расход
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Новый расход</DialogTitle>
-            </DialogHeader>
-            <FinanceForm type="expense" date={date} onSuccess={() => setIsDialogOpen(false)} />
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {expenses.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-            <TrendingDown className="h-12 w-12 mb-4 opacity-50" />
-            <p>Нет расходов за этот день</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Наименование</TableHead>
-              <TableHead className="text-right">Сумма</TableHead>
-              <TableHead className="w-10"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {expenses.map((expense) => (
-              <TableRow key={expense.id}>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    {expense.name}
-                    {expense.reminder && <Bell className="h-3 w-3 text-primary" />}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-green-600" />
+                Доходы
+              </CardTitle>
+              <p className="text-2xl font-bold text-green-600 mt-1">{totalIncome} сомони</p>
+            </div>
+            <Dialog open={isIncomeDialogOpen} onOpenChange={setIsIncomeDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" data-testid="button-add-income">
+                  <Plus className="h-4 w-4 mr-1" />
+                  Добавить
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Новый доход</DialogTitle>
+                </DialogHeader>
+                <FinanceForm type="income" date={date} onSuccess={() => setIsIncomeDialogOpen(false)} />
+              </DialogContent>
+            </Dialog>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {loadingIncomes ? (
+            <Skeleton className="h-32 w-full" />
+          ) : incomes.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+              <TrendingUp className="h-10 w-10 mb-2 opacity-50" />
+              <p className="text-sm">Нет доходов</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {incomes.map((income) => (
+                <div key={income.id} className="flex items-center justify-between py-2 border-b last:border-0">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <span className="text-sm truncate">{income.name}</span>
+                    {income.reminder && <Bell className="h-3 w-3 text-primary shrink-0" />}
+                    {income.recordId && (
+                      <Badge variant="outline" className="text-xs shrink-0">Авто</Badge>
+                    )}
                   </div>
-                </TableCell>
-                <TableCell className="text-right font-medium text-red-600">
-                  -{expense.amount} сомони
-                </TableCell>
-                <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => deleteMutation.mutate(expense.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="font-medium text-green-600">+{income.amount}</span>
+                    {!income.recordId && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => deleteIncomeMutation.mutate(income.id)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <TrendingDown className="h-5 w-5 text-red-600" />
+                Расходы
+              </CardTitle>
+              <p className="text-2xl font-bold text-red-600 mt-1">{totalExpense} сомони</p>
+            </div>
+            <Dialog open={isExpenseDialogOpen} onOpenChange={setIsExpenseDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" data-testid="button-add-expense">
+                  <Plus className="h-4 w-4 mr-1" />
+                  Добавить
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Новый расход</DialogTitle>
+                </DialogHeader>
+                <FinanceForm type="expense" date={date} onSuccess={() => setIsExpenseDialogOpen(false)} />
+              </DialogContent>
+            </Dialog>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {loadingExpenses ? (
+            <Skeleton className="h-32 w-full" />
+          ) : expenses.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+              <TrendingDown className="h-10 w-10 mb-2 opacity-50" />
+              <p className="text-sm">Нет расходов</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {expenses.map((expense) => (
+                <div key={expense.id} className="flex items-center justify-between py-2 border-b last:border-0">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <span className="text-sm truncate">{expense.name}</span>
+                    {expense.reminder && <Bell className="h-3 w-3 text-primary shrink-0" />}
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="font-medium text-red-600">-{expense.amount}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => deleteExpenseMutation.mutate(expense.id)}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -763,20 +738,16 @@ export default function DayPage() {
       </div>
 
       <Tabs defaultValue="records" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="records" data-testid="tab-records">Записи</TabsTrigger>
-          <TabsTrigger value="incomes" data-testid="tab-incomes">Доходы</TabsTrigger>
-          <TabsTrigger value="expenses" data-testid="tab-expenses">Расходы</TabsTrigger>
+          <TabsTrigger value="finance" data-testid="tab-finance">Финансы</TabsTrigger>
           <TabsTrigger value="analytics" data-testid="tab-analytics">Аналитика</TabsTrigger>
         </TabsList>
         <TabsContent value="records" className="mt-6">
           {date && <RecordsTab date={date} />}
         </TabsContent>
-        <TabsContent value="incomes" className="mt-6">
-          {date && <IncomesTab date={date} />}
-        </TabsContent>
-        <TabsContent value="expenses" className="mt-6">
-          {date && <ExpensesTab date={date} />}
+        <TabsContent value="finance" className="mt-6">
+          {date && <FinanceTab date={date} />}
         </TabsContent>
         <TabsContent value="analytics" className="mt-6">
           {date && <AnalyticsTab date={date} />}

@@ -346,5 +346,14 @@ export async function registerRoutes(
     res.json(analytics);
   });
 
+  app.get("/api/analytics/employees/:id", requireAdmin, async (req, res) => {
+    try {
+      const analytics = await storage.getEmployeeDailyAnalytics(req.params.id);
+      res.json(analytics);
+    } catch (error) {
+      res.status(404).json({ error: "Employee not found" });
+    }
+  });
+
   return httpServer;
 }

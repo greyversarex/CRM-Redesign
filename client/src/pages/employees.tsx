@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, UserCog, Trash2, Shield, User } from "lucide-react";
+import { Link } from "wouter";
+import { Plus, UserCog, Trash2, Shield, User, BarChart3 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -151,14 +152,16 @@ export default function EmployeesPage() {
               {users.map((user) => (
                 <TableRow key={user.id} data-testid={`employee-row-${user.id}`}>
                   <TableCell className="font-medium">
-                    <div className="flex items-center gap-2">
-                      {user.role === "admin" ? (
-                        <Shield className="h-4 w-4 text-primary" />
-                      ) : (
-                        <User className="h-4 w-4 text-muted-foreground" />
-                      )}
-                      {user.fullName}
-                    </div>
+                    <Link href={`/employees/${user.id}/analytics`}>
+                      <div className="flex items-center gap-2 cursor-pointer hover:text-primary transition-colors">
+                        {user.role === "admin" ? (
+                          <Shield className="h-4 w-4 text-primary" />
+                        ) : (
+                          <User className="h-4 w-4 text-muted-foreground" />
+                        )}
+                        {user.fullName}
+                      </div>
+                    </Link>
                   </TableCell>
                   <TableCell className="text-muted-foreground">{user.login}</TableCell>
                   <TableCell>
@@ -167,14 +170,25 @@ export default function EmployeesPage() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => deleteMutation.mutate(user.id)}
-                      data-testid={`button-delete-employee-${user.id}`}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center justify-end gap-1">
+                      <Link href={`/employees/${user.id}/analytics`}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          data-testid={`button-analytics-${user.id}`}
+                        >
+                          <BarChart3 className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => deleteMutation.mutate(user.id)}
+                        data-testid={`button-delete-employee-${user.id}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

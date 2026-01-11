@@ -16,6 +16,7 @@ import ClientsPage from "@/pages/clients";
 import ClientDetailPage from "@/pages/client-detail";
 import ServicesPage from "@/pages/services";
 import EmployeesPage from "@/pages/employees";
+import EmployeeAnalyticsPage from "@/pages/employee-analytics";
 import AnalyticsPage from "@/pages/analytics";
 import EmployeeDashboard from "@/pages/employee-dashboard";
 import NotFound from "@/pages/not-found";
@@ -31,6 +32,7 @@ function AdminRouter() {
         <Route path="/clients/:id" component={ClientDetailPage} />
         <Route path="/services" component={ServicesPage} />
         <Route path="/employees" component={EmployeesPage} />
+        <Route path="/employees/:id/analytics" component={EmployeeAnalyticsPage} />
         <Route path="/analytics" component={AnalyticsPage} />
         <Route component={NotFound} />
       </Switch>

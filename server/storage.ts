@@ -3,7 +3,7 @@ import {
   type User, type InsertUser,
   type Client, type InsertClient,
   type Service, type InsertService,
-  type Record, type InsertRecord,
+  type Record as RecordType, type InsertRecord,
   type Income, type InsertIncome,
   type Expense, type InsertExpense,
   type RecordWithRelations,
@@ -35,8 +35,8 @@ export interface IStorage {
   getRecordsByClientId(clientId: string): Promise<RecordWithRelations[]>;
   getRecordsByEmployeeId(employeeId: string, date?: string): Promise<RecordWithRelations[]>;
   getRecordCountsByMonth(year: number, month: number): Promise<Record<string, number>>;
-  createRecord(record: InsertRecord): Promise<Record>;
-  updateRecord(id: string, record: Partial<InsertRecord>): Promise<Record | undefined>;
+  createRecord(record: InsertRecord): Promise<RecordType>;
+  updateRecord(id: string, record: Partial<InsertRecord>): Promise<RecordType | undefined>;
   deleteRecord(id: string): Promise<void>;
   
   getIncomesByDate(date: string): Promise<Income[]>;
@@ -53,6 +53,13 @@ export interface IStorage {
     result: number;
     uniqueClients: number;
     employeeStats: { id: string; fullName: string; completedServices: number; revenue: number }[];
+  }>;
+  
+  getEmployeeDailyAnalytics(employeeId: string): Promise<{
+    employee: { id: string; fullName: string };
+    dailyStats: { date: string; revenue: number; completedServices: number }[];
+    totalRevenue: number;
+    totalServices: number;
   }>;
 }
 
@@ -231,12 +238,12 @@ export class DatabaseStorage implements IStorage {
     return counts;
   }
 
-  async createRecord(insertRecord: InsertRecord): Promise<Record> {
+  async createRecord(insertRecord: InsertRecord): Promise<RecordType> {
     const [record] = await db.insert(records).values(insertRecord).returning();
     return record;
   }
 
-  async updateRecord(id: string, data: Partial<InsertRecord>): Promise<Record | undefined> {
+  async updateRecord(id: string, data: Partial<InsertRecord>): Promise<RecordType | undefined> {
     const [record] = await db.update(records).set(data).where(eq(records.id, id)).returning();
     return record || undefined;
   }
@@ -328,6 +335,51 @@ export class DatabaseStorage implements IStorage {
       result: totalIncome - totalExpense,
       uniqueClients: uniqueClientIds.size,
       employeeStats,
+    };
+  }
+
+  async getEmployeeDailyAnalytics(employeeId: string) {
+    const employee = await this.getUser(employeeId);
+    if (!employee) {
+      throw new Error("Employee not found");
+    }
+
+    const completedRecords = await db
+      .select({
+        date: records.date,
+        price: services.price,
+      })
+      .from(records)
+      .leftJoin(services, eq(records.serviceId, services.id))
+      .where(
+        and(
+          eq(records.employeeId, employeeId),
+          eq(records.status, "done")
+        )
+      );
+
+    const dailyMap = new Map<string, { revenue: number; completedServices: number }>();
+    let totalRevenue = 0;
+    let totalServices = 0;
+
+    for (const row of completedRecords) {
+      const existing = dailyMap.get(row.date) || { revenue: 0, completedServices: 0 };
+      existing.revenue += row.price || 0;
+      existing.completedServices += 1;
+      dailyMap.set(row.date, existing);
+      totalRevenue += row.price || 0;
+      totalServices += 1;
+    }
+
+    const dailyStats = Array.from(dailyMap.entries())
+      .map(([date, data]) => ({ date, ...data }))
+      .sort((a, b) => b.date.localeCompare(a.date));
+
+    return {
+      employee: { id: employee.id, fullName: employee.fullName },
+      dailyStats,
+      totalRevenue,
+      totalServices,
     };
   }
 }
