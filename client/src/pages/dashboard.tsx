@@ -120,7 +120,7 @@ function MonthCalendar({
   const paddingDays = startDayOfWeek === 0 ? 6 : startDayOfWeek - 1;
 
   return (
-    <Card className="max-w-2xl mx-auto">
+    <Card>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <Button
