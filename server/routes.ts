@@ -1,11 +1,15 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
+import { pool } from "./db";
 import { storage } from "./storage";
 import { insertClientSchema, insertServiceSchema, insertRecordSchema, insertIncomeSchema, insertExpenseSchema } from "@shared/schema";
 import { z } from "zod";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
+
+const PgStore = connectPgSimple(session);
 
 const scryptAsync = promisify(scrypt);
 
@@ -56,6 +60,11 @@ export async function registerRoutes(
 ): Promise<Server> {
   app.use(
     session({
+      store: new PgStore({
+        pool,
+        tableName: "session",
+        createTableIfMissing: true,
+      }),
       secret: process.env.SESSION_SECRET || "crm-session-secret-key",
       resave: false,
       saveUninitialized: false,
