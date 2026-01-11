@@ -24,7 +24,7 @@ export const usersRelations = relations(users, ({ many }) => ({
 export const clients = pgTable("clients", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   fullName: text("full_name").notNull(),
-  phone: text("phone").notNull(),
+  phone: text("phone"),
 });
 
 export const clientsRelations = relations(clients, ({ many }) => ({
@@ -49,6 +49,7 @@ export const records = pgTable("records", {
   serviceId: varchar("service_id").notNull().references(() => services.id),
   employeeId: varchar("employee_id").notNull().references(() => users.id),
   date: date("date").notNull(),
+  time: text("time").notNull().default("09:00"),
   status: recordStatusEnum("status").notNull().default("pending"),
   reminder: boolean("reminder").notNull().default(false),
 });
