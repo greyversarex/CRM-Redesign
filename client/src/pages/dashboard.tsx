@@ -97,7 +97,17 @@ function RecordsList({ title, records, isLoading }: { title: string; records: Re
   );
 }
 
-function MonthCalendar({ baseDate }: { baseDate: Date }) {
+function MonthCalendar({ 
+  baseDate, 
+  onPrevMonth, 
+  onNextMonth, 
+  onToday 
+}: { 
+  baseDate: Date; 
+  onPrevMonth: () => void; 
+  onNextMonth: () => void;
+  onToday: () => void;
+}) {
   const monthStart = startOfMonth(baseDate);
   const monthEnd = endOfMonth(baseDate);
   const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
@@ -110,21 +120,49 @@ function MonthCalendar({ baseDate }: { baseDate: Date }) {
   const paddingDays = startDayOfWeek === 0 ? 6 : startDayOfWeek - 1;
 
   return (
-    <Card>
+    <Card className="max-w-md mx-auto">
       <CardHeader className="pb-2">
-        <CardTitle className="text-center text-lg font-semibold capitalize">
-          {format(baseDate, "LLLL yyyy", { locale: ru })}
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onPrevMonth}
+            data-testid="button-prev-month"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
+          <div className="flex items-center gap-3">
+            <CardTitle className="text-center text-lg font-semibold capitalize">
+              {format(baseDate, "LLLL yyyy", { locale: ru })}
+            </CardTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onToday}
+              data-testid="button-today"
+            >
+              Сегодня
+            </Button>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onNextMonth}
+            data-testid="button-next-month"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </Button>
+        </div>
       </CardHeader>
-      <CardContent className="px-2 pb-3">
-        <div className="grid grid-cols-7 gap-1 mb-1">
+      <CardContent className="px-4 pb-4">
+        <div className="grid grid-cols-7 gap-2 mb-2">
           {["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"].map((day) => (
-            <div key={day} className="text-center text-xs font-medium text-muted-foreground py-1">
+            <div key={day} className="text-center text-sm font-medium text-muted-foreground py-1">
               {day}
             </div>
           ))}
         </div>
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 gap-2">
           {Array.from({ length: paddingDays }).map((_, i) => (
             <div key={`pad-${i}`} className="aspect-square" />
           ))}
@@ -140,7 +178,7 @@ function MonthCalendar({ baseDate }: { baseDate: Date }) {
                 data-testid={`calendar-day-${dateKey}`}
               >
                 <div
-                  className={`aspect-square rounded-md flex flex-col items-center justify-center text-sm cursor-pointer hover-elevate transition-colors ${
+                  className={`aspect-square rounded-md flex flex-col items-center justify-center text-base cursor-pointer hover-elevate transition-colors ${
                     isCurrentDay
                       ? "bg-primary text-primary-foreground font-semibold"
                       : "hover:bg-muted"
@@ -173,12 +211,6 @@ export default function Dashboard() {
     queryKey: ["/api/records", { date: tomorrow }],
   });
 
-  const months = [
-    currentDate,
-    addMonths(currentDate, 1),
-    addMonths(currentDate, 2),
-  ];
-
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -198,41 +230,14 @@ export default function Dashboard() {
         />
       </div>
 
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Календарь</h2>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setCurrentDate(subMonths(currentDate, 3))}
-            data-testid="button-prev-months"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentDate(new Date())}
-            data-testid="button-today"
-          >
-            Сегодня
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setCurrentDate(addMonths(currentDate, 3))}
-            data-testid="button-next-months"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+      <h2 className="text-xl font-semibold">Календарь</h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {months.map((month) => (
-          <MonthCalendar key={month.toISOString()} baseDate={month} />
-        ))}
-      </div>
+      <MonthCalendar 
+        baseDate={currentDate}
+        onPrevMonth={() => setCurrentDate(subMonths(currentDate, 1))}
+        onNextMonth={() => setCurrentDate(addMonths(currentDate, 1))}
+        onToday={() => setCurrentDate(new Date())}
+      />
     </div>
   );
 }
