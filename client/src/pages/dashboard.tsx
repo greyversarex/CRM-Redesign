@@ -162,7 +162,7 @@ function MonthCalendar({
           {["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"].map((day, index) => (
             <div 
               key={day} 
-              className={`text-center text-sm font-semibold text-muted-foreground py-3 ${
+              className={`text-center text-xs sm:text-sm font-semibold text-muted-foreground py-2 sm:py-3 ${
                 index < 6 ? "border-r border-border" : ""
               }`}
             >
@@ -190,7 +190,7 @@ function MonthCalendar({
                 data-testid={`calendar-day-${dateKey}`}
               >
                 <div
-                  className={`aspect-square flex flex-col items-center justify-center text-base cursor-pointer transition-all hover:bg-primary/10 ${
+                  className={`aspect-square flex flex-col items-center justify-center text-sm sm:text-base cursor-pointer transition-all hover:bg-primary/10 active:bg-primary/20 ${
                     !isLastColumn ? "border-r border-border" : ""
                   } ${
                     !isLastRow ? "border-b border-border" : ""
@@ -200,7 +200,7 @@ function MonthCalendar({
                       : "hover:shadow-inner"
                   }`}
                 >
-                  <span className={`text-lg ${isCurrentDay ? "" : ""}`}>{format(day, "d")}</span>
+                  <span className="text-base sm:text-lg">{format(day, "d")}</span>
                   {count > 0 && (
                     <div className={`w-2 h-2 rounded-full mt-1 ${isCurrentDay ? "bg-primary-foreground" : "bg-primary"}`} />
                   )}
@@ -228,9 +228,9 @@ export default function Dashboard() {
   });
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold" data-testid="text-dashboard-title">Панель управления</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold" data-testid="text-dashboard-title">Панель управления</h1>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -246,7 +246,7 @@ export default function Dashboard() {
         />
       </div>
 
-      <h2 className="text-xl font-semibold">Календарь</h2>
+      <h2 className="text-lg sm:text-xl font-semibold">Календарь</h2>
 
       <MonthCalendar 
         baseDate={currentDate}

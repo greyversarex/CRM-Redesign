@@ -367,26 +367,26 @@ function RecordsTab({ date }: { date: string }) {
         <div className="space-y-3">
           {records.map((record) => (
             <Card key={record.id} data-testid={`day-record-${record.id}`}>
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between gap-4">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-medium">{record.client.fullName}</h3>
+                      <h3 className="font-medium text-sm sm:text-base">{record.client.fullName}</h3>
                       {record.reminder && <Bell className="h-4 w-4 text-primary" />}
                     </div>
-                    <p className="text-sm text-muted-foreground">{record.service.name}</p>
-                    <p className="text-sm font-medium text-primary mt-1">{record.service.price} сомони</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">{record.service.name}</p>
+                    <p className="text-xs sm:text-sm font-medium text-primary mt-1">{record.service.price} сомони</p>
                     <p className="text-xs text-muted-foreground mt-1">
                       Сотрудник: {record.employee.fullName}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     {record.status === "pending" && (
                       <>
                         <Button
                           variant="outline"
                           size="icon"
-                          className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                          className="h-8 w-8 sm:h-9 sm:w-9 text-green-600 hover:text-green-700 hover:bg-green-50"
                           onClick={() => updateMutation.mutate({ id: record.id, status: "done" })}
                           data-testid={`button-complete-${record.id}`}
                         >
@@ -395,7 +395,7 @@ function RecordsTab({ date }: { date: string }) {
                         <Button
                           variant="outline"
                           size="icon"
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          className="h-8 w-8 sm:h-9 sm:w-9 text-red-600 hover:text-red-700 hover:bg-red-50"
                           onClick={() => updateMutation.mutate({ id: record.id, status: "canceled" })}
                           data-testid={`button-cancel-${record.id}`}
                         >
@@ -404,6 +404,7 @@ function RecordsTab({ date }: { date: string }) {
                       </>
                     )}
                     <Badge
+                      className="text-xs"
                       variant={
                         record.status === "done"
                           ? "default"
@@ -421,6 +422,7 @@ function RecordsTab({ date }: { date: string }) {
                     <Button
                       variant="ghost"
                       size="icon"
+                      className="h-8 w-8 sm:h-9 sm:w-9"
                       onClick={() => deleteMutation.mutate(record.id)}
                       data-testid={`button-delete-${record.id}`}
                     >
@@ -774,32 +776,32 @@ export default function DayPage() {
   const formattedDate = date ? format(parseISO(date), "d MMMM yyyy", { locale: ru }) : "";
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center gap-4">
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="flex items-center gap-3 sm:gap-4">
         <Link href="/">
           <Button variant="ghost" size="icon" data-testid="button-back">
             <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>
         <div>
-          <h1 className="text-2xl font-bold capitalize">{formattedDate}</h1>
-          <p className="text-sm text-muted-foreground">Страница дня</p>
+          <h1 className="text-xl sm:text-2xl font-bold capitalize">{formattedDate}</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">Страница дня</p>
         </div>
       </div>
 
       <Tabs defaultValue="records" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="records" data-testid="tab-records">Записи</TabsTrigger>
-          <TabsTrigger value="finance" data-testid="tab-finance">Финансы</TabsTrigger>
-          <TabsTrigger value="analytics" data-testid="tab-analytics">Аналитика</TabsTrigger>
+          <TabsTrigger value="records" className="text-xs sm:text-sm" data-testid="tab-records">Записи</TabsTrigger>
+          <TabsTrigger value="finance" className="text-xs sm:text-sm" data-testid="tab-finance">Финансы</TabsTrigger>
+          <TabsTrigger value="analytics" className="text-xs sm:text-sm" data-testid="tab-analytics">Аналитика</TabsTrigger>
         </TabsList>
-        <TabsContent value="records" className="mt-6">
+        <TabsContent value="records" className="mt-4 sm:mt-6">
           {date && <RecordsTab date={date} />}
         </TabsContent>
-        <TabsContent value="finance" className="mt-6">
+        <TabsContent value="finance" className="mt-4 sm:mt-6">
           {date && <FinanceTab date={date} />}
         </TabsContent>
-        <TabsContent value="analytics" className="mt-6">
+        <TabsContent value="analytics" className="mt-4 sm:mt-6">
           {date && <AnalyticsTab date={date} />}
         </TabsContent>
       </Tabs>

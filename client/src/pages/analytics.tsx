@@ -31,9 +31,9 @@ export default function AnalyticsPage() {
   });
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <h1 className="text-3xl font-bold" data-testid="text-analytics-title">Аналитика</h1>
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold" data-testid="text-analytics-title">Аналитика</h1>
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -43,7 +43,7 @@ export default function AnalyticsPage() {
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <div className="w-40 text-center font-medium capitalize">
+          <div className="min-w-[120px] sm:w-40 text-center text-sm sm:text-base font-medium capitalize">
             {format(currentMonth, "LLLL yyyy", { locale: ru })}
           </div>
           <Button
@@ -65,12 +65,12 @@ export default function AnalyticsPage() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
             <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-xl">
-                    <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-400" />
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <div className="p-2 sm:p-3 bg-green-100 dark:bg-green-900/30 rounded-xl">
+                    <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 dark:text-green-400" />
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Общий доход</p>

@@ -85,9 +85,9 @@ export default function ServicesPage() {
   });
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <h1 className="text-3xl font-bold" data-testid="text-services-title">Услуги</h1>
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="flex items-center justify-between flex-wrap gap-3 sm:gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold" data-testid="text-services-title">Услуги</h1>
         <Dialog open={isDialogOpen} onOpenChange={(open) => {
           setIsDialogOpen(open);
           if (!open) setEditingService(null);

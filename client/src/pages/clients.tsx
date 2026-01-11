@@ -87,13 +87,13 @@ export default function ClientsPage() {
   const filteredClients = clients.filter(
     (client) =>
       client.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      client.phone.includes(searchQuery)
+      (client.phone && client.phone.includes(searchQuery))
   );
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <h1 className="text-3xl font-bold" data-testid="text-clients-title">Клиенты</h1>
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="flex items-center justify-between flex-wrap gap-3 sm:gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold" data-testid="text-clients-title">Клиенты</h1>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button data-testid="button-add-client">
