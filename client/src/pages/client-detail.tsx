@@ -105,7 +105,7 @@ export default function ClientDetailPage() {
                     <TableCell>
                       <div>
                         <p className="font-medium">{record.service.name}</p>
-                        <p className="text-sm text-muted-foreground">{record.service.price} сомони</p>
+                        <p className="text-sm text-muted-foreground">{record.service.price} с</p>
                       </div>
                     </TableCell>
                     <TableCell>{record.employee.fullName}</TableCell>

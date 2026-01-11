@@ -183,7 +183,7 @@ function RecordForm({
           <SelectContent>
             {services.map((service) => (
               <SelectItem key={service.id} value={service.id}>
-                {service.name} - {service.price} сомони
+                {service.name} - {service.price} с
               </SelectItem>
             ))}
           </SelectContent>
@@ -276,7 +276,7 @@ function FinanceForm({
         />
       </div>
       <div className="space-y-2">
-        <Label>Сумма (сомони)</Label>
+        <Label>Сумма (с)</Label>
         <Input
           type="number"
           value={amount}
@@ -375,7 +375,7 @@ function RecordsTab({ date }: { date: string }) {
                       {record.reminder && <Bell className="h-4 w-4 text-primary" />}
                     </div>
                     <p className="text-xs sm:text-sm text-muted-foreground">{record.service.name}</p>
-                    <p className="text-xs sm:text-sm font-medium text-primary mt-1">{record.service.price} сомони</p>
+                    <p className="text-xs sm:text-sm font-medium text-primary mt-1">{record.service.price} с</p>
                     <p className="text-xs text-muted-foreground mt-1">
                       Сотрудник: {record.employee.fullName}
                     </p>
@@ -481,7 +481,7 @@ function FinanceTab({ date }: { date: string }) {
                 <TrendingUp className="h-5 w-5 text-green-600" />
                 Доходы
               </CardTitle>
-              <p className="text-2xl font-bold text-green-600 mt-1">{totalIncome} сомони</p>
+              <p className="text-2xl font-bold text-green-600 mt-1">{totalIncome} с</p>
             </div>
             <Dialog open={isIncomeDialogOpen} onOpenChange={setIsIncomeDialogOpen}>
               <DialogTrigger asChild>
@@ -548,7 +548,7 @@ function FinanceTab({ date }: { date: string }) {
                 <TrendingDown className="h-5 w-5 text-red-600" />
                 Расходы
               </CardTitle>
-              <p className="text-2xl font-bold text-red-600 mt-1">{totalExpense} сомони</p>
+              <p className="text-2xl font-bold text-red-600 mt-1">{totalExpense} с</p>
             </div>
             <Dialog open={isExpenseDialogOpen} onOpenChange={setIsExpenseDialogOpen}>
               <DialogTrigger asChild>
@@ -763,7 +763,7 @@ function AnalyticsTab({ date }: { date: string }) {
                     <TableCell className="font-medium">{stats.name}</TableCell>
                     <TableCell className="text-center">{stats.services}</TableCell>
                     <TableCell className="text-right font-medium text-green-600">
-                      {stats.revenue} сомони
+                      {stats.revenue} с
                     </TableCell>
                   </TableRow>
                 ))}

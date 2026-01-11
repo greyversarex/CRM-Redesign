@@ -206,7 +206,7 @@ function MonthCalendar({
                   <span className="text-base sm:text-lg">{format(day, "d")}</span>
                   {earnings > 0 && (
                     <span className={`text-[10px] sm:text-xs font-medium ${isCurrentDay ? "text-primary-foreground/90" : "text-green-600 dark:text-green-400"}`}>
-                      {earnings}₽
+                      {earnings} с
                     </span>
                   )}
                 </div>

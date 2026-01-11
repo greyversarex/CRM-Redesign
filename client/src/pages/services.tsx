@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, Briefcase, Trash2, Pencil, DollarSign } from "lucide-react";
+import { Plus, Briefcase, Trash2, Pencil, Coins } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,7 +51,7 @@ function ServiceForm({ onSuccess, service }: { onSuccess: () => void; service?: 
         />
       </div>
       <div className="space-y-2">
-        <Label>Цена (сомони)</Label>
+        <Label>Цена (с)</Label>
         <Input
           type="number"
           value={price}
@@ -141,10 +141,9 @@ export default function ServicesPage() {
                 <TableRow key={service.id} data-testid={`service-row-${service.id}`}>
                   <TableCell className="font-medium">{service.name}</TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2 text-primary font-medium">
-                      <DollarSign className="h-4 w-4" />
-                      {service.price} сомони
-                    </div>
+                    <span className="text-primary font-medium">
+                      {service.price} с
+                    </span>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">

@@ -78,7 +78,7 @@ export default function EmployeeAnalyticsPage() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Общий доход</p>
-                <p className="text-2xl font-bold text-green-600">{analytics.totalRevenue} сомони</p>
+                <p className="text-2xl font-bold text-green-600">{analytics.totalRevenue} с</p>
               </div>
             </div>
           </CardContent>
@@ -107,7 +107,7 @@ export default function EmployeeAnalyticsPage() {
                 <p className="text-2xl font-bold">
                   {analytics.totalServices > 0
                     ? Math.round(analytics.totalRevenue / analytics.totalServices)
-                    : 0} сомони
+                    : 0} с
                 </p>
               </div>
             </div>
@@ -150,7 +150,7 @@ export default function EmployeeAnalyticsPage() {
                       </TableCell>
                       <TableCell className="text-center">{day.completedServices}</TableCell>
                       <TableCell className="text-right font-medium text-green-600">
-                        +{day.revenue} сомони
+                        +{day.revenue} с
                       </TableCell>
                     </TableRow>
                   ))}

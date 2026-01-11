@@ -75,7 +75,7 @@ export default function AnalyticsPage() {
                   <div>
                     <p className="text-sm text-muted-foreground">Общий доход</p>
                     <p className="text-xl sm:text-2xl font-bold text-green-600">{analytics?.totalIncome || 0}</p>
-                    <p className="text-xs text-muted-foreground">сомони</p>
+                    <p className="text-xs text-muted-foreground">с</p>
                   </div>
                 </div>
               </CardContent>
@@ -89,7 +89,7 @@ export default function AnalyticsPage() {
                   <div>
                     <p className="text-sm text-muted-foreground">Общий расход</p>
                     <p className="text-xl sm:text-2xl font-bold text-red-600">{analytics?.totalExpense || 0}</p>
-                    <p className="text-xs text-muted-foreground">сомони</p>
+                    <p className="text-xs text-muted-foreground">с</p>
                   </div>
                 </div>
               </CardContent>
@@ -105,7 +105,7 @@ export default function AnalyticsPage() {
                     <p className={`text-xl sm:text-2xl font-bold ${(analytics?.result || 0) >= 0 ? "text-green-600" : "text-red-600"}`}>
                       {(analytics?.result || 0) >= 0 ? "+" : ""}{analytics?.result || 0}
                     </p>
-                    <p className="text-xs text-muted-foreground">сомони</p>
+                    <p className="text-xs text-muted-foreground">с</p>
                   </div>
                 </div>
               </CardContent>
@@ -154,7 +154,7 @@ export default function AnalyticsPage() {
                         <TableCell className="font-medium">{employee.fullName}</TableCell>
                         <TableCell className="text-right">{employee.completedServices}</TableCell>
                         <TableCell className="text-right font-medium text-green-600">
-                          {employee.revenue} сомони
+                          {employee.revenue} с
                         </TableCell>
                       </TableRow>
                     ))}

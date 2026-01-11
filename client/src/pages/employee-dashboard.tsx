@@ -169,7 +169,7 @@ function RecordForm({ onSuccess }: { onSuccess: () => void }) {
           <SelectContent>
             {services.map((service) => (
               <SelectItem key={service.id} value={service.id}>
-                {service.name} - {service.price} сомони
+                {service.name} - {service.price} с
               </SelectItem>
             ))}
           </SelectContent>
@@ -248,7 +248,7 @@ function RecordCard({ record, onStatusChange }: {
               <Briefcase className="h-3 w-3" />
               <span>{record.service.name}</span>
             </div>
-            <p className="text-sm font-medium text-primary">{record.service.price} сомони</p>
+            <p className="text-sm font-medium text-primary">{record.service.price} с</p>
             <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
               <Calendar className="h-3 w-3" />
               <span>{format(new Date(record.date), "d MMMM yyyy", { locale: ru })}</span>
