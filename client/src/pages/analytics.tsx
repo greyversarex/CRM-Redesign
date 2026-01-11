@@ -74,35 +74,35 @@ export default function AnalyticsPage() {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Общий доход</p>
-                    <p className="text-2xl font-bold text-green-600">{analytics?.totalIncome || 0}</p>
+                    <p className="text-xl sm:text-2xl font-bold text-green-600">{analytics?.totalIncome || 0}</p>
                     <p className="text-xs text-muted-foreground">сомони</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-xl">
-                    <TrendingDown className="h-6 w-6 text-red-600 dark:text-red-400" />
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <div className="p-2 sm:p-3 bg-red-100 dark:bg-red-900/30 rounded-xl">
+                    <TrendingDown className="h-5 w-5 sm:h-6 sm:w-6 text-red-600 dark:text-red-400" />
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Общий расход</p>
-                    <p className="text-2xl font-bold text-red-600">{analytics?.totalExpense || 0}</p>
+                    <p className="text-xl sm:text-2xl font-bold text-red-600">{analytics?.totalExpense || 0}</p>
                     <p className="text-xs text-muted-foreground">сомони</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-primary/10 rounded-xl">
-                    <DollarSign className="h-6 w-6 text-primary" />
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <div className="p-2 sm:p-3 bg-primary/10 rounded-xl">
+                    <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Итог месяца</p>
-                    <p className={`text-2xl font-bold ${(analytics?.result || 0) >= 0 ? "text-green-600" : "text-red-600"}`}>
+                    <p className={`text-xl sm:text-2xl font-bold ${(analytics?.result || 0) >= 0 ? "text-green-600" : "text-red-600"}`}>
                       {(analytics?.result || 0) >= 0 ? "+" : ""}{analytics?.result || 0}
                     </p>
                     <p className="text-xs text-muted-foreground">сомони</p>
@@ -111,14 +111,14 @@ export default function AnalyticsPage() {
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
-                    <Users className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <div className="p-2 sm:p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
+                    <Users className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Клиентов</p>
-                    <p className="text-2xl font-bold">{analytics?.uniqueClients || 0}</p>
+                    <p className="text-xl sm:text-2xl font-bold">{analytics?.uniqueClients || 0}</p>
                     <p className="text-xs text-muted-foreground">уникальных</p>
                   </div>
                 </div>
