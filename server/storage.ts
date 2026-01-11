@@ -36,6 +36,7 @@ export interface IStorage {
   getRecordsByClientId(clientId: string): Promise<RecordWithRelations[]>;
   getRecordsByEmployeeId(employeeId: string, date?: string): Promise<RecordWithRelations[]>;
   getRecordCountsByMonth(year: number, month: number): Promise<Record<string, number>>;
+  getEarningsByMonth(year: number, month: number): Promise<Record<string, number>>;
   createRecord(record: InsertRecord): Promise<RecordType>;
   updateRecord(id: string, record: Partial<InsertRecord>): Promise<RecordType | undefined>;
   deleteRecord(id: string): Promise<void>;
@@ -251,6 +252,28 @@ export class DatabaseStorage implements IStorage {
       counts[row.date] = row.count;
     }
     return counts;
+  }
+
+  async getEarningsByMonth(year: number, month: number): Promise<Record<string, number>> {
+    const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
+    const endMonth = month === 12 ? 1 : month + 1;
+    const endYear = month === 12 ? year + 1 : year;
+    const endDate = `${endYear}-${String(endMonth).padStart(2, "0")}-01`;
+
+    const result = await db
+      .select({
+        date: incomes.date,
+        total: sql<number>`sum(${incomes.amount})::int`,
+      })
+      .from(incomes)
+      .where(and(gte(incomes.date, startDate), lte(incomes.date, endDate)))
+      .groupBy(incomes.date);
+
+    const earnings: Record<string, number> = {};
+    for (const row of result) {
+      earnings[row.date] = row.total;
+    }
+    return earnings;
   }
 
   async createRecord(insertRecord: InsertRecord): Promise<RecordType> {

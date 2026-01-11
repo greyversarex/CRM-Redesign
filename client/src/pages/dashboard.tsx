@@ -114,6 +114,10 @@ function MonthCalendar({
     queryKey: ["/api/records/counts", format(baseDate, "yyyy-MM")],
   });
 
+  const { data: dailyEarnings = {} } = useQuery<Record<string, number>>({
+    queryKey: ["/api/earnings", format(baseDate, "yyyy-MM")],
+  });
+
   const startDayOfWeek = getDay(monthStart);
   const paddingDays = startDayOfWeek === 0 ? 6 : startDayOfWeek - 1;
 
@@ -175,6 +179,7 @@ function MonthCalendar({
           {days.map((day, index) => {
             const dateKey = format(day, "yyyy-MM-dd");
             const count = recordCounts[dateKey] || 0;
+            const earnings = dailyEarnings[dateKey] || 0;
             const isCurrentDay = isToday(day);
             const totalCells = paddingDays + days.length;
             const currentCell = paddingDays + index + 1;
@@ -199,8 +204,10 @@ function MonthCalendar({
                   }`}
                 >
                   <span className="text-base sm:text-lg">{format(day, "d")}</span>
-                  {count > 0 && (
-                    <div className={`w-2 h-2 rounded-full mt-1 ${isCurrentDay ? "bg-primary-foreground" : "bg-primary"}`} />
+                  {earnings > 0 && (
+                    <span className={`text-[10px] sm:text-xs font-medium ${isCurrentDay ? "text-primary-foreground/90" : "text-green-600 dark:text-green-400"}`}>
+                      {earnings}₽
+                    </span>
                   )}
                 </div>
               </Link>

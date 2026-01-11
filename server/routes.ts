@@ -268,6 +268,12 @@ export async function registerRoutes(
     res.json(counts);
   });
 
+  app.get("/api/earnings/:yearMonth", requireAuth, async (req, res) => {
+    const [year, month] = req.params.yearMonth.split("-").map(Number);
+    const earnings = await storage.getEarningsByMonth(year, month);
+    res.json(earnings);
+  });
+
   app.post("/api/records", requireAuth, async (req, res) => {
     try {
       const data = {
