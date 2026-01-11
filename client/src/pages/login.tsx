@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Lock, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import loginBg from "@assets/2023.11.28_1768087524627.jpg";
+import loginBg from "@assets/2023.11.28_1768131251410.jpg";
 
 const loginSchema = z.object({
   login: z.string().min(1, "Введите логин"),
