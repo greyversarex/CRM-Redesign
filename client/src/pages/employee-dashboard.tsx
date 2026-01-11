@@ -111,7 +111,7 @@ function RecordForm({ onSuccess }: { onSuccess: () => void }) {
             <Button
               variant="outline"
               role="combobox"
-              className="w-full justify-between font-normal"
+              className="w-full justify-between font-normal bg-white dark:bg-white dark:text-black"
               data-testid="select-client"
             >
               {selectedClient ? selectedClient.fullName : "Выберите клиента"}
@@ -163,7 +163,7 @@ function RecordForm({ onSuccess }: { onSuccess: () => void }) {
       <div className="space-y-2">
         <Label>Услуга</Label>
         <Select value={serviceId} onValueChange={setServiceId}>
-          <SelectTrigger data-testid="select-service">
+          <SelectTrigger className="bg-white dark:bg-white dark:text-black" data-testid="select-service">
             <SelectValue placeholder="Выберите услугу" />
           </SelectTrigger>
           <SelectContent>
@@ -177,11 +177,15 @@ function RecordForm({ onSuccess }: { onSuccess: () => void }) {
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
-          <Label>Дата</Label>
+          <Label className="flex items-center gap-1">
+            <Calendar className="h-3 w-3" />
+            Дата
+          </Label>
           <Input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
+            className="bg-white dark:bg-white dark:text-black"
             data-testid="input-record-date"
           />
         </div>
@@ -194,6 +198,7 @@ function RecordForm({ onSuccess }: { onSuccess: () => void }) {
             type="time"
             value={time}
             onChange={(e) => setTime(e.target.value)}
+            className="bg-white dark:bg-white dark:text-black"
             data-testid="input-record-time"
           />
         </div>
