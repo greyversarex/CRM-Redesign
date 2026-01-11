@@ -32,26 +32,24 @@ function RecordCard({ record }: { record: RecordWithRelations }) {
 
   return (
     <div className="p-3 border rounded-lg hover-elevate" data-testid={`record-card-${record.id}`}>
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <p className="font-medium text-sm truncate">{record.client.fullName}</p>
-            {record.time && (
-              <span className="text-xs text-primary font-medium shrink-0">{record.time}</span>
-            )}
-          </div>
-          <p className="text-xs text-muted-foreground truncate">{record.service.name}</p>
+      <div className="flex flex-wrap items-start justify-between gap-1.5">
+        <div className="flex items-center gap-2 min-w-0">
+          <p className="font-medium text-sm">{record.client.fullName}</p>
+          {record.time && (
+            <span className="text-xs text-primary font-medium whitespace-nowrap">{record.time}</span>
+          )}
         </div>
-        <Badge variant="secondary" className={`shrink-0 text-xs ${statusColors[record.status]}`}>
+        <Badge variant="secondary" className={`text-xs whitespace-nowrap ${statusColors[record.status]}`}>
           <span className="mr-1">{statusIcons[record.status]}</span>
           {statusLabels[record.status]}
         </Badge>
       </div>
+      <p className="text-xs text-muted-foreground mt-1">{record.service.name}</p>
       <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
-        <User className="h-3 w-3" />
+        <User className="h-3 w-3 shrink-0" />
         <span className="truncate">{record.employee.fullName}</span>
         {record.reminder && (
-          <Bell className="h-3 w-3 text-primary ml-auto" />
+          <Bell className="h-3 w-3 text-primary ml-auto shrink-0" />
         )}
       </div>
     </div>
