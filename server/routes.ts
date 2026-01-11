@@ -126,8 +126,15 @@ export async function registerRoutes(
   });
 
   app.delete("/api/users/:id", requireAdmin, async (req, res) => {
-    await storage.deleteUser(req.params.id);
-    res.json({ success: true });
+    try {
+      await storage.deleteUser(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      if (error.code === '23503') {
+        return res.status(400).json({ error: "Нельзя удалить сотрудника с записями" });
+      }
+      res.status(500).json({ error: "Internal server error" });
+    }
   });
 
   app.get("/api/clients", requireAuth, async (req, res) => {
