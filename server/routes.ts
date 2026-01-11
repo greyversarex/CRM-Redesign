@@ -27,8 +27,13 @@ declare module "express-session" {
   }
 }
 
-function requireAuth(req: Request, res: Response, next: NextFunction) {
+async function requireAuth(req: Request, res: Response, next: NextFunction) {
   if (!req.session.userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  const user = await storage.getUser(req.session.userId);
+  if (!user) {
+    req.session.destroy(() => {});
     return res.status(401).json({ error: "Unauthorized" });
   }
   next();
