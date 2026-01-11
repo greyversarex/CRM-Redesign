@@ -130,3 +130,7 @@ export type RecordWithRelations = Record & {
   service: Service;
   employee: User;
 };
+
+export type IncomeWithRelations = Income & {
+  employeeName?: string | null;
+};

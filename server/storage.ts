@@ -7,6 +7,7 @@ import {
   type Income, type InsertIncome,
   type Expense, type InsertExpense,
   type RecordWithRelations,
+  type IncomeWithRelations,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, sql } from "drizzle-orm";
@@ -39,7 +40,7 @@ export interface IStorage {
   updateRecord(id: string, record: Partial<InsertRecord>): Promise<RecordType | undefined>;
   deleteRecord(id: string): Promise<void>;
   
-  getIncomesByDate(date: string): Promise<Income[]>;
+  getIncomesByDate(date: string): Promise<IncomeWithRelations[]>;
   createIncome(income: InsertIncome): Promise<Income>;
   deleteIncome(id: string): Promise<void>;
   
@@ -253,8 +254,22 @@ export class DatabaseStorage implements IStorage {
     await db.delete(records).where(eq(records.id, id));
   }
 
-  async getIncomesByDate(date: string): Promise<Income[]> {
-    return db.select().from(incomes).where(eq(incomes.date, date));
+  async getIncomesByDate(date: string): Promise<IncomeWithRelations[]> {
+    const result = await db
+      .select({
+        id: incomes.id,
+        date: incomes.date,
+        name: incomes.name,
+        amount: incomes.amount,
+        recordId: incomes.recordId,
+        reminder: incomes.reminder,
+        employeeName: users.fullName,
+      })
+      .from(incomes)
+      .leftJoin(records, eq(incomes.recordId, records.id))
+      .leftJoin(users, eq(records.employeeId, users.id))
+      .where(eq(incomes.date, date));
+    return result;
   }
 
   async createIncome(insertIncome: InsertIncome): Promise<Income> {

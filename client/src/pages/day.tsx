@@ -19,7 +19,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import type { RecordWithRelations, Client, Service, Income, Expense } from "@shared/schema";
+import type { RecordWithRelations, Client, Service, IncomeWithRelations, Expense } from "@shared/schema";
 
 function QuickAddClientForm({ onSuccess }: { onSuccess: () => void }) {
   const { toast } = useToast();
@@ -444,7 +444,7 @@ function FinanceTab({ date }: { date: string }) {
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  const { data: incomes = [], isLoading: loadingIncomes } = useQuery<Income[]>({
+  const { data: incomes = [], isLoading: loadingIncomes } = useQuery<IncomeWithRelations[]>({
     queryKey: ["/api/incomes", { date }],
   });
 
@@ -510,13 +510,18 @@ function FinanceTab({ date }: { date: string }) {
           ) : (
             <div className="space-y-2">
               {incomes.map((income) => (
-                <div key={income.id} className="flex items-center justify-between py-2 border-b last:border-0">
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <span className="text-sm truncate">{income.name}</span>
-                    {income.reminder && <Bell className="h-3 w-3 text-primary shrink-0" />}
+                <div key={income.id} className="flex items-center justify-between py-2 border-b last:border-0 gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm">{income.name}</span>
+                      {income.employeeName && (
+                        <span className="text-xs text-muted-foreground">({income.employeeName})</span>
+                      )}
+                      {income.reminder && <Bell className="h-3 w-3 text-primary shrink-0" />}
+                    </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className="font-medium text-green-600">+{income.amount}</span>
+                    <span className="font-medium text-green-600 whitespace-nowrap">+{income.amount}</span>
                     {!income.recordId && (
                       <Button
                         variant="ghost"
@@ -599,7 +604,7 @@ function FinanceTab({ date }: { date: string }) {
 }
 
 function AnalyticsTab({ date }: { date: string }) {
-  const { data: incomes = [] } = useQuery<Income[]>({
+  const { data: incomes = [] } = useQuery<IncomeWithRelations[]>({
     queryKey: ["/api/incomes", { date }],
   });
 
