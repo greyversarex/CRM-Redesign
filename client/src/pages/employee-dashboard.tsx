@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { Plus, Calendar, Clock, Check, X, Bell, User, Briefcase } from "lucide-react";
+import { Plus, Calendar, Clock, Check, X, Bell, User, Briefcase, Search, UserPlus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,19 +14,76 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { RecordWithRelations, Client, Service } from "@shared/schema";
+
+function QuickAddClientForm({ onSuccess }: { onSuccess: () => void }) {
+  const { toast } = useToast();
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+
+  const mutation = useMutation({
+    mutationFn: (data: any) => apiRequest("POST", "/api/clients", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      toast({ title: "Клиент добавлен" });
+      onSuccess();
+    },
+    onError: () => {
+      toast({ title: "Ошибка", variant: "destructive" });
+    },
+  });
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!fullName.trim()) return;
+    mutation.mutate({ fullName, phone: phone || null });
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-3 p-3 border rounded-lg bg-muted/30">
+      <div className="space-y-2">
+        <Label>ФИО клиента</Label>
+        <Input
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
+          placeholder="Введите имя"
+          data-testid="input-quick-client-name"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label>Телефон (необязательно)</Label>
+        <Input
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          placeholder="+992"
+          data-testid="input-quick-client-phone"
+        />
+      </div>
+      <Button type="submit" size="sm" className="w-full" disabled={mutation.isPending}>
+        {mutation.isPending ? "Добавление..." : "Добавить клиента"}
+      </Button>
+    </form>
+  );
+}
 
 function RecordForm({ onSuccess }: { onSuccess: () => void }) {
   const { toast } = useToast();
   const [clientId, setClientId] = useState("");
   const [serviceId, setServiceId] = useState("");
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [time, setTime] = useState("09:00");
   const [reminder, setReminder] = useState(false);
+  const [clientOpen, setClientOpen] = useState(false);
+  const [showAddClient, setShowAddClient] = useState(false);
 
   const { data: clients = [] } = useQuery<Client[]>({ queryKey: ["/api/clients"] });
   const { data: services = [] } = useQuery<Service[]>({ queryKey: ["/api/services"] });
+
+  const selectedClient = clients.find(c => c.id === clientId);
 
   const mutation = useMutation({
     mutationFn: (data: any) => apiRequest("POST", "/api/records", data),
@@ -42,25 +99,66 @@ function RecordForm({ onSuccess }: { onSuccess: () => void }) {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    mutation.mutate({ clientId, serviceId, date, reminder });
+    mutation.mutate({ clientId, serviceId, date, time, reminder });
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
         <Label>Клиент</Label>
-        <Select value={clientId} onValueChange={setClientId}>
-          <SelectTrigger data-testid="select-client">
-            <SelectValue placeholder="Выберите клиента" />
-          </SelectTrigger>
-          <SelectContent>
-            {clients.map((client) => (
-              <SelectItem key={client.id} value={client.id}>
-                {client.fullName}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Popover open={clientOpen} onOpenChange={setClientOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              className="w-full justify-between font-normal"
+              data-testid="select-client"
+            >
+              {selectedClient ? selectedClient.fullName : "Выберите клиента"}
+              <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-full p-0" align="start">
+            <Command>
+              <CommandInput placeholder="Поиск клиента..." />
+              <CommandList>
+                <CommandEmpty>Клиент не найден</CommandEmpty>
+                <CommandGroup>
+                  {clients.map((client) => (
+                    <CommandItem
+                      key={client.id}
+                      value={client.fullName}
+                      onSelect={() => {
+                        setClientId(client.id);
+                        setClientOpen(false);
+                      }}
+                    >
+                      <Check
+                        className={`mr-2 h-4 w-4 ${clientId === client.id ? "opacity-100" : "opacity-0"}`}
+                      />
+                      {client.fullName}
+                      {client.phone && <span className="ml-2 text-xs text-muted-foreground">{client.phone}</span>}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="w-full text-primary"
+          onClick={() => setShowAddClient(!showAddClient)}
+          data-testid="button-toggle-add-client"
+        >
+          <UserPlus className="h-4 w-4 mr-2" />
+          {showAddClient ? "Скрыть" : "Добавить нового клиента"}
+        </Button>
+        {showAddClient && (
+          <QuickAddClientForm onSuccess={() => setShowAddClient(false)} />
+        )}
       </div>
       <div className="space-y-2">
         <Label>Услуга</Label>
@@ -77,14 +175,28 @@ function RecordForm({ onSuccess }: { onSuccess: () => void }) {
           </SelectContent>
         </Select>
       </div>
-      <div className="space-y-2">
-        <Label>Дата</Label>
-        <Input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          data-testid="input-record-date"
-        />
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-2">
+          <Label>Дата</Label>
+          <Input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            data-testid="input-record-date"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label className="flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            Время
+          </Label>
+          <Input
+            type="time"
+            value={time}
+            onChange={(e) => setTime(e.target.value)}
+            data-testid="input-record-time"
+          />
+        </div>
       </div>
       <div className="flex items-center space-x-2">
         <Checkbox
