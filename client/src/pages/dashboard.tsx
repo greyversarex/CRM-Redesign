@@ -120,56 +120,68 @@ function MonthCalendar({
   const paddingDays = startDayOfWeek === 0 ? 6 : startDayOfWeek - 1;
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
+    <Card className="shadow-lg">
+      <CardHeader className="pb-4 border-b">
         <div className="flex items-center justify-between">
           <Button
-            variant="ghost"
+            variant="outline"
             size="icon"
             onClick={onPrevMonth}
             data-testid="button-prev-month"
+            className="shadow-sm"
           >
             <ChevronLeft className="h-5 w-5" />
           </Button>
           <div className="flex items-center gap-3">
-            <CardTitle className="text-center text-lg font-semibold capitalize">
+            <CardTitle className="text-center text-xl font-bold capitalize">
               {format(baseDate, "LLLL yyyy", { locale: ru })}
             </CardTitle>
             <Button
-              variant="outline"
+              variant="default"
               size="sm"
               onClick={onToday}
               data-testid="button-today"
+              className="shadow-sm"
             >
               Сегодня
             </Button>
           </div>
           <Button
-            variant="ghost"
+            variant="outline"
             size="icon"
             onClick={onNextMonth}
             data-testid="button-next-month"
+            className="shadow-sm"
           >
             <ChevronRight className="h-5 w-5" />
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="px-4 pb-4">
-        <div className="grid grid-cols-7 gap-2 mb-2">
-          {["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"].map((day) => (
-            <div key={day} className="text-center text-sm font-medium text-muted-foreground py-1">
+      <CardContent className="p-4">
+        <div className="grid grid-cols-7 border-b border-border mb-2">
+          {["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"].map((day, index) => (
+            <div 
+              key={day} 
+              className={`text-center text-sm font-semibold text-muted-foreground py-3 ${
+                index < 6 ? "border-r border-border" : ""
+              }`}
+            >
               {day}
             </div>
           ))}
         </div>
-        <div className="grid grid-cols-7 gap-2">
+        <div className="grid grid-cols-7">
           {Array.from({ length: paddingDays }).map((_, i) => (
-            <div key={`pad-${i}`} className="aspect-square" />
+            <div key={`pad-${i}`} className="aspect-square border-r border-b border-border bg-muted/30" />
           ))}
-          {days.map((day) => {
+          {days.map((day, index) => {
             const dateKey = format(day, "yyyy-MM-dd");
             const count = recordCounts[dateKey] || 0;
             const isCurrentDay = isToday(day);
+            const totalCells = paddingDays + days.length;
+            const currentCell = paddingDays + index + 1;
+            const isLastColumn = currentCell % 7 === 0;
+            const isLastRow = currentCell > totalCells - 7;
 
             return (
               <Link
@@ -178,15 +190,19 @@ function MonthCalendar({
                 data-testid={`calendar-day-${dateKey}`}
               >
                 <div
-                  className={`aspect-square rounded-md flex flex-col items-center justify-center text-base cursor-pointer hover-elevate transition-colors ${
+                  className={`aspect-square flex flex-col items-center justify-center text-base cursor-pointer transition-all hover:bg-primary/10 ${
+                    !isLastColumn ? "border-r border-border" : ""
+                  } ${
+                    !isLastRow ? "border-b border-border" : ""
+                  } ${
                     isCurrentDay
-                      ? "bg-primary text-primary-foreground font-semibold"
-                      : "hover:bg-muted"
+                      ? "bg-primary text-primary-foreground font-bold shadow-inner"
+                      : "hover:shadow-inner"
                   }`}
                 >
-                  {format(day, "d")}
+                  <span className={`text-lg ${isCurrentDay ? "" : ""}`}>{format(day, "d")}</span>
                   {count > 0 && (
-                    <div className={`w-1.5 h-1.5 rounded-full mt-0.5 ${isCurrentDay ? "bg-primary-foreground" : "bg-primary"}`} />
+                    <div className={`w-2 h-2 rounded-full mt-1 ${isCurrentDay ? "bg-primary-foreground" : "bg-primary"}`} />
                   )}
                 </div>
               </Link>
