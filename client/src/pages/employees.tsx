@@ -109,8 +109,21 @@ export default function EmployeesPage() {
       setDeleteDialogOpen(false);
       setUserToDelete(null);
     },
-    onError: () => {
-      toast({ title: "Ошибка при удалении", variant: "destructive" });
+    onError: async (error: any) => {
+      try {
+        const data = await error.json?.();
+        if (data?.hasRecords) {
+          toast({ 
+            title: "Невозможно удалить", 
+            description: "Сначала удалите записи сотрудника или выберите 'С записями'",
+            variant: "destructive" 
+          });
+        } else {
+          toast({ title: "Ошибка при удалении", variant: "destructive" });
+        }
+      } catch {
+        toast({ title: "Ошибка при удалении", variant: "destructive" });
+      }
     },
   });
 
@@ -256,12 +269,20 @@ export default function EmployeesPage() {
             {recordsCount > 0 ? (
               <>
                 <Button
+                  variant="secondary"
+                  onClick={() => handleDelete(false)}
+                  disabled={deleteMutation.isPending}
+                  data-testid="button-delete-only-employee"
+                >
+                  Только сотрудника
+                </Button>
+                <Button
                   variant="destructive"
                   onClick={() => handleDelete(true)}
                   disabled={deleteMutation.isPending}
                   data-testid="button-delete-with-records"
                 >
-                  Удалить с записями
+                  С записями ({recordsCount})
                 </Button>
               </>
             ) : (
