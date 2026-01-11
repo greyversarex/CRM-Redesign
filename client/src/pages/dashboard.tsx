@@ -1,15 +1,203 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, isTomorrow, addMonths, subMonths, getDay } from "date-fns";
 import { ru } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Clock, User, Check, X, Bell } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, User, Check, X, Bell, Plus, Search, UserPlus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { RecordWithRelations } from "@shared/schema";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import type { RecordWithRelations, Client, Service } from "@shared/schema";
+
+function QuickAddClientForm({ onSuccess }: { onSuccess: () => void }) {
+  const { toast } = useToast();
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+
+  const mutation = useMutation({
+    mutationFn: (data: any) => apiRequest("POST", "/api/clients", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      toast({ title: "Клиент добавлен" });
+      onSuccess();
+    },
+    onError: () => {
+      toast({ title: "Ошибка", variant: "destructive" });
+    },
+  });
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!fullName.trim()) return;
+    mutation.mutate({ fullName, phone: phone || null });
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-3 p-3 border rounded-lg bg-muted/30">
+      <div className="space-y-2">
+        <Label>ФИО клиента</Label>
+        <Input
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
+          placeholder="Введите имя"
+          data-testid="input-quick-client-name"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label>Телефон (необязательно)</Label>
+        <Input
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          placeholder="+992"
+          data-testid="input-quick-client-phone"
+        />
+      </div>
+      <Button type="submit" size="sm" className="w-full" disabled={mutation.isPending}>
+        {mutation.isPending ? "Добавление..." : "Добавить клиента"}
+      </Button>
+    </form>
+  );
+}
+
+function QuickRecordForm({ date, onSuccess }: { date: string; onSuccess: () => void }) {
+  const { toast } = useToast();
+  const [clientId, setClientId] = useState("");
+  const [serviceId, setServiceId] = useState("");
+  const [time, setTime] = useState("09:00");
+  const [reminder, setReminder] = useState(false);
+  const [clientOpen, setClientOpen] = useState(false);
+  const [showAddClient, setShowAddClient] = useState(false);
+
+  const { data: clients = [] } = useQuery<Client[]>({ queryKey: ["/api/clients"] });
+  const { data: services = [] } = useQuery<Service[]>({ queryKey: ["/api/services"] });
+
+  const selectedClient = clients.find(c => c.id === clientId);
+
+  const mutation = useMutation({
+    mutationFn: (data: any) => apiRequest("POST", "/api/records", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/records"] });
+      toast({ title: "Запись создана" });
+      onSuccess();
+    },
+    onError: () => {
+      toast({ title: "Ошибка", variant: "destructive" });
+    },
+  });
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    mutation.mutate({ clientId, serviceId, date, time, reminder });
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label>Клиент</Label>
+        <Popover open={clientOpen} onOpenChange={setClientOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              className="w-full justify-between font-normal"
+              data-testid="select-client-dashboard"
+            >
+              {selectedClient ? selectedClient.fullName : "Выберите клиента"}
+              <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-full p-0" align="start">
+            <Command>
+              <CommandInput placeholder="Поиск клиента..." />
+              <CommandList>
+                <CommandEmpty>Клиент не найден</CommandEmpty>
+                <CommandGroup>
+                  {clients.map((client) => (
+                    <CommandItem
+                      key={client.id}
+                      value={client.fullName}
+                      onSelect={() => {
+                        setClientId(client.id);
+                        setClientOpen(false);
+                      }}
+                    >
+                      <Check
+                        className={`mr-2 h-4 w-4 ${clientId === client.id ? "opacity-100" : "opacity-0"}`}
+                      />
+                      {client.fullName}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="w-full text-primary"
+          onClick={() => setShowAddClient(!showAddClient)}
+        >
+          <UserPlus className="h-4 w-4 mr-2" />
+          {showAddClient ? "Скрыть" : "Добавить нового клиента"}
+        </Button>
+        {showAddClient && (
+          <QuickAddClientForm onSuccess={() => setShowAddClient(false)} />
+        )}
+      </div>
+      <div className="space-y-2">
+        <Label>Услуга</Label>
+        <Select value={serviceId} onValueChange={setServiceId}>
+          <SelectTrigger data-testid="select-service-dashboard">
+            <SelectValue placeholder="Выберите услугу" />
+          </SelectTrigger>
+          <SelectContent>
+            {services.map((service) => (
+              <SelectItem key={service.id} value={service.id}>
+                {service.name} - {service.price} с
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-2">
+        <Label className="flex items-center gap-1">
+          <Clock className="h-3 w-3" />
+          Время
+        </Label>
+        <Input
+          type="time"
+          value={time}
+          onChange={(e) => setTime(e.target.value)}
+          data-testid="input-record-time-dashboard"
+        />
+      </div>
+      <div className="flex items-center space-x-2">
+        <Checkbox
+          id="reminder-dashboard"
+          checked={reminder}
+          onCheckedChange={(checked) => setReminder(checked as boolean)}
+        />
+        <Label htmlFor="reminder-dashboard">Напомнить</Label>
+      </div>
+      <Button type="submit" className="w-full" disabled={mutation.isPending} data-testid="button-save-record-dashboard">
+        {mutation.isPending ? "Сохранение..." : "Создать запись"}
+      </Button>
+    </form>
+  );
+}
 
 function RecordCard({ record }: { record: RecordWithRelations }) {
   const statusColors = {
@@ -56,18 +244,36 @@ function RecordCard({ record }: { record: RecordWithRelations }) {
   );
 }
 
-function RecordsList({ title, records, isLoading }: { title: string; records: RecordWithRelations[]; isLoading: boolean }) {
+function RecordsList({ title, records, isLoading, date }: { title: string; records: RecordWithRelations[]; isLoading: boolean; date: string }) {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg font-semibold flex items-center gap-2">
-          {title}
-          {!isLoading && (
-            <Badge variant="secondary" className="text-xs">
-              {records.length}
-            </Badge>
-          )}
-        </CardTitle>
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <CardTitle className="text-lg font-semibold flex items-center gap-2">
+            {title}
+            {!isLoading && (
+              <Badge variant="secondary" className="text-xs">
+                {records.length}
+              </Badge>
+            )}
+          </CardTitle>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" data-testid={`button-add-record-${date}`}>
+                <Plus className="h-4 w-4 mr-1" />
+                Добавить
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Новая запись</DialogTitle>
+              </DialogHeader>
+              <QuickRecordForm date={date} onSuccess={() => setIsDialogOpen(false)} />
+            </DialogContent>
+          </Dialog>
+        </div>
       </CardHeader>
       <CardContent>
         <ScrollArea className="h-[280px]">
@@ -243,11 +449,13 @@ export default function Dashboard() {
           title="Записи на сегодня"
           records={todayRecords}
           isLoading={loadingToday}
+          date={today}
         />
         <RecordsList
           title="Записи на завтра"
           records={tomorrowRecords}
           isLoading={loadingTomorrow}
+          date={tomorrow}
         />
       </div>
 
