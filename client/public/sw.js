@@ -1,4 +1,4 @@
-const CACHE_NAME = 'u-sistem-v2';
+const CACHE_NAME = 'u-sistem-v3';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -18,6 +18,11 @@ self.addEventListener('install', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
+
+  if (url.pathname.startsWith('/api/')) {
+    event.respondWith(fetch(request));
+    return;
+  }
 
   if (request.mode === 'navigate') {
     event.respondWith(
