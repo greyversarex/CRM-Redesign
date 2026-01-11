@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { Plus, Phone, User, Trash2, Eye, Search } from "lucide-react";
+import { Plus, Phone, User, Trash2, Eye, Search, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -69,6 +69,9 @@ function ClientForm({ onSuccess, client }: { onSuccess: () => void; client?: Cli
 
 export default function ClientsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
+  const [recordsCount, setRecordsCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
 
@@ -77,12 +80,37 @@ export default function ClientsPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => apiRequest("DELETE", `/api/clients/${id}`),
+    mutationFn: ({ id, cascade }: { id: string; cascade: boolean }) => 
+      apiRequest("DELETE", `/api/clients/${id}?cascade=${cascade}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/records"] });
       toast({ title: "Клиент удален" });
+      setDeleteDialogOpen(false);
+      setClientToDelete(null);
+    },
+    onError: () => {
+      toast({ title: "Ошибка при удалении", variant: "destructive" });
     },
   });
+
+  async function handleDeleteClick(client: Client) {
+    try {
+      const res = await fetch(`/api/clients/${client.id}/records-count`, { credentials: "include" });
+      const data = await res.json();
+      setRecordsCount(data.count || 0);
+      setClientToDelete(client);
+      setDeleteDialogOpen(true);
+    } catch {
+      toast({ title: "Ошибка", variant: "destructive" });
+    }
+  }
+
+  function handleDelete(cascade: boolean) {
+    if (clientToDelete) {
+      deleteMutation.mutate({ id: clientToDelete.id, cascade });
+    }
+  }
 
   const filteredClients = clients.filter(
     (client) =>
@@ -164,7 +192,7 @@ export default function ClientsPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => deleteMutation.mutate(client.id)}
+                        onClick={() => handleDeleteClick(client)}
                         data-testid={`button-delete-client-${client.id}`}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -177,6 +205,67 @@ export default function ClientsPage() {
           </Table>
         </Card>
       )}
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Удаление клиента
+            </DialogTitle>
+            <DialogDescription>
+              {clientToDelete && (
+                <>
+                  Вы уверены, что хотите удалить клиента <strong>{clientToDelete.fullName}</strong>?
+                  {recordsCount > 0 && (
+                    <span className="block mt-2 text-destructive">
+                      У этого клиента есть {recordsCount} записей.
+                    </span>
+                  )}
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col gap-2 sm:flex-row">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+              data-testid="button-cancel-delete-client"
+            >
+              Отмена
+            </Button>
+            {recordsCount > 0 ? (
+              <>
+                <Button
+                  variant="secondary"
+                  onClick={() => handleDelete(false)}
+                  disabled={deleteMutation.isPending}
+                  data-testid="button-delete-only-client"
+                >
+                  Только клиента
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => handleDelete(true)}
+                  disabled={deleteMutation.isPending}
+                  data-testid="button-delete-client-with-records"
+                >
+                  С записями ({recordsCount})
+                </Button>
+              </>
+            ) : (
+              <Button
+                variant="destructive"
+                onClick={() => handleDelete(false)}
+                disabled={deleteMutation.isPending}
+                data-testid="button-confirm-delete-client"
+              >
+                Удалить
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
