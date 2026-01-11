@@ -21,31 +21,32 @@ export function EmployeeLayout({ children }: EmployeeLayoutProps) {
 
   return (
     <div className="flex flex-col h-screen">
-      <header className="flex items-center justify-between gap-4 px-6 py-4 border-b bg-gradient-to-r from-background via-background to-emerald-500/5 dark:to-emerald-500/10">
+      <header className="flex items-center justify-between gap-4 px-6 py-4 border-b bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 text-white shadow-md">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
+          <div className="w-10 h-10 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center shadow-lg">
             <Sparkles className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h1 className="font-bold text-lg bg-gradient-to-r from-emerald-600 to-green-600 dark:from-emerald-400 dark:to-green-400 bg-clip-text text-transparent">U-sistem</h1>
-            <p className="text-xs text-muted-foreground">Рабочее место</p>
+            <h1 className="font-bold text-lg text-white">U-sistem</h1>
+            <p className="text-xs text-white/70">Рабочее место</p>
           </div>
         </div>
         <div className="flex items-center gap-4">
           <ThemeToggle />
           <div className="flex items-center gap-3">
             <Avatar>
-              <AvatarFallback className="bg-gradient-to-br from-emerald-400 to-green-500 text-white font-medium">
+              <AvatarFallback className="bg-white/20 text-white font-medium">
                 {initials}
               </AvatarFallback>
             </Avatar>
             <div className="hidden sm:block">
-              <p className="text-sm font-medium">{user?.fullName}</p>
-              <p className="text-xs text-muted-foreground">Сотрудник</p>
+              <p className="text-sm font-medium text-white">{user?.fullName}</p>
+              <p className="text-xs text-white/70">Сотрудник</p>
             </div>
             <Button
               variant="ghost"
               size="icon"
+              className="text-white hover:bg-white/20"
               onClick={logout}
               data-testid="button-logout"
             >
