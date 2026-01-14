@@ -85,6 +85,8 @@ export default function ClientsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
       queryClient.invalidateQueries({ queryKey: ["/api/records"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/earnings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/incomes"] });
       toast({ title: "Клиент удален" });
       setDeleteDialogOpen(false);
       setClientToDelete(null);

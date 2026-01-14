@@ -105,6 +105,8 @@ export default function EmployeesPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       queryClient.invalidateQueries({ queryKey: ["/api/records"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/earnings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/incomes"] });
       toast({ title: "Сотрудник удален" });
       setDeleteDialogOpen(false);
       setUserToDelete(null);

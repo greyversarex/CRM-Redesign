@@ -103,6 +103,8 @@ function RecordForm({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/records"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/earnings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/incomes"] });
       toast({ title: record ? "Запись обновлена" : "Запись создана" });
       onSuccess();
     },
@@ -250,7 +252,9 @@ function FinanceForm({
   const mutation = useMutation({
     mutationFn: (data: any) => apiRequest("POST", `/api/${type === "income" ? "incomes" : "expenses"}`, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/${type === "income" ? "incomes" : "expenses"}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/incomes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/earnings"] });
       toast({ title: type === "income" ? "Доход добавлен" : "Расход добавлен" });
       onSuccess();
     },
@@ -315,6 +319,7 @@ function RecordsTab({ date }: { date: string }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/records"] });
       queryClient.invalidateQueries({ queryKey: ["/api/incomes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/earnings"] });
       toast({ title: "Статус обновлен" });
     },
   });
@@ -323,6 +328,8 @@ function RecordsTab({ date }: { date: string }) {
     mutationFn: (id: string) => apiRequest("DELETE", `/api/records/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/records"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/incomes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/earnings"] });
       toast({ title: "Запись удалена" });
     },
   });
@@ -456,6 +463,7 @@ function FinanceTab({ date }: { date: string }) {
     mutationFn: (id: string) => apiRequest("DELETE", `/api/incomes/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/incomes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/earnings"] });
       toast({ title: "Доход удален" });
     },
   });
@@ -464,6 +472,7 @@ function FinanceTab({ date }: { date: string }) {
     mutationFn: (id: string) => apiRequest("DELETE", `/api/expenses/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/earnings"] });
       toast({ title: "Расход удален" });
     },
   });

@@ -26,6 +26,7 @@ function ServiceForm({ onSuccess, service }: { onSuccess: () => void; service?: 
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/services"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/records"] });
       toast({ title: service ? "Услуга обновлена" : "Услуга создана" });
       onSuccess();
     },
