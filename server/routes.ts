@@ -58,6 +58,8 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  const isProduction = process.env.NODE_ENV === "production";
+  
   app.use(
     session({
       store: new PgStore({
@@ -68,10 +70,12 @@ export async function registerRoutes(
       secret: process.env.SESSION_SECRET || "crm-session-secret-key",
       resave: false,
       saveUninitialized: false,
+      proxy: isProduction,
       cookie: {
-        secure: false,
+        secure: isProduction,
         httpOnly: true,
         maxAge: 24 * 60 * 60 * 1000,
+        sameSite: isProduction ? "none" : "lax",
       },
     })
   );
