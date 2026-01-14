@@ -1,0 +1,52 @@
+root@6382113-xn198673:/var/www/CRM-Redesign# cat > seed-users.js << 'EOF'
+const crypto = require('crypto');
+const { Pool } = require('pg');
+
+async function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  return new Promise((resolve, reject) => {
+    crypto.scrypt(password, salt, 64, (err, derivedKey) => {
+      if (err) reject(err);
+      resolve(salt + ':' + derivedKey.toString('hex'));
+    });
+  });
+}
+
+async function createUsers() {
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
+  const adminHash = await hashPassword('admin123');
+  const employeeHash = await hashPassword('employee123');
+
+  await pool.query("DELETE FROM users WHERE login IN ('admin', 'employee')");
+
+  await pool.query(
+    "INSERT INTO users (id, login, password_hash, full_name, role) VALUES (gen_random_uuid(), $1, $2, $3, $4)",
+    ['admin', adminHash, 'Администратор', 'admin']
+  );
+
+  await pool.query(
+    "INSERT INTO users (id, login, password_hash, full_name, role) VALUES (gen_random_uuid(), $1, $2, $3, $4)",
+    ['employee', employeeHash, 'Сотрудник', 'employee']
+  );
+
+  console.log('Users created!');
+  await pool.end();
+}
+
+createUsers().catch(console.error);
+EOF
+root@6382113-xn198673:/var/www/CRM-Redesign# node seed-users.js
+file:///var/www/CRM-Redesign/seed-users.js:1
+const crypto = require('crypto');
+               ^
+
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/www/CRM-Redesign/package.json' contains "type": "module". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/www/CRM-Redesign/seed-users.js:1:16
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:547:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:116:5)
+
+Node.js v22.12.0
+root@6382113-xn198673:/var/www/CRM-Redesign#
