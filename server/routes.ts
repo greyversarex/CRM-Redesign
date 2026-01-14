@@ -95,8 +95,16 @@ export async function registerRoutes(
       }
 
       req.session.userId = user.id;
-      const { passwordHash, ...safeUser } = user;
-      res.json(safeUser);
+      
+      // Explicitly save session before responding
+      req.session.save((err) => {
+        if (err) {
+          console.error("Session save error:", err);
+          return res.status(500).json({ error: "Session error" });
+        }
+        const { passwordHash, ...safeUser } = user;
+        res.json(safeUser);
+      });
     } catch (error) {
       res.status(500).json({ error: "Internal server error" });
     }
