@@ -1,0 +1,68 @@
+/root/.pm2/logs/usistem-out.log last 20 lines:
+0|usistem  | 9:27:23 PM [express] GET /api/earnings/2026-01 401 in 2ms :: {"error":"Unauthorized"}
+0|usistem  | 9:27:23 PM [express] GET /api/records 401 in 1ms :: {"error":"Unauthorized"}
+0|usistem  | 9:27:23 PM [express] GET /api/records 401 in 2ms :: {"error":"Unauthorized"}
+0|usistem  | 9:27:26 PM [express] GET /api/records/counts/2026-01 401 in 1ms :: {"error":"Unauthorized"}
+0|usistem  | 9:27:26 PM [express] GET /api/earnings/2026-01 401 in 1ms :: {"error":"Unauthorized"}
+0|usistem  | 9:27:26 PM [express] GET /api/records 401 in 1ms :: {"error":"Unauthorized"}
+0|usistem  | 9:27:26 PM [express] GET /api/records 401 in 1ms :: {"error":"Unauthorized"}
+0|usistem  | 9:27:42 PM [express] GET /api/analytics/month 401 in 2ms :: {"error":"Unauthorized"}
+0|usistem  | 9:27:44 PM [express] GET /api/services 401 in 0ms :: {"error":"Unauthorized"}
+0|usistem  | 9:27:50 PM [express] POST /api/services 401 in 1ms :: {"error":"Unauthorized"}
+0|usistem  | 9:30:32 PM [express] serving on port 5000
+0|usistem  | 9:30:49 PM [express] GET /api/auth/me 401 in 2ms :: {"error":"Unauthorized"}
+0|usistem  | 9:30:53 PM [express] POST /api/auth/login 500 in 55ms :: {"error":"Session error"}
+0|usistem  | 9:30:59 PM [express] GET /api/auth/me 401 in 1ms :: {"error":"Unauthorized"}
+0|usistem  | 9:31:01 PM [express] POST /api/auth/login 500 in 51ms :: {"error":"Session error"}
+0|usistem  | 9:31:11 PM [express] POST /api/auth/login 500 in 48ms :: {"error":"Session error"}
+0|usistem  | 9:35:06 PM [express] POST /api/auth/login 500 in 58ms :: {"error":"Session error"}
+0|usistem  | 9:35:09 PM [express] GET /api/auth/me 401 in 1ms :: {"error":"Unauthorized"}
+0|usistem  | 9:35:14 PM [express] POST /api/auth/login 500 in 53ms :: {"error":"Session error"}
+0|usistem  | 9:35:17 PM [express] POST /api/auth/login 500 in 41ms :: {"error":"Session error"}
+
+/root/.pm2/logs/usistem-error.log last 20 lines:
+0|usistem  | Session save error: Error: ENOENT: no such file or directory, open '/var/www/CRM-Redesign/dist/table.sql'
+0|usistem  |     at async open (node:internal/fs/promises:638:25)
+0|usistem  |     at async Object.readFile (node:internal/fs/promises:1238:14)
+0|usistem  |     at async n._rawEnsureSessionStoreTable (/var/www/CRM-Redesign/dist/index.cjs:70:28756)
+0|usistem  |     at async n._asyncQuery (/var/www/CRM-Redesign/dist/index.cjs:70:29841) {
+0|usistem  |   errno: -2,
+0|usistem  |   code: 'ENOENT',
+0|usistem  |   syscall: 'open',
+0|usistem  |   path: '/var/www/CRM-Redesign/dist/table.sql'
+0|usistem  | }
+0|usistem  | Session save error: Error: ENOENT: no such file or directory, open '/var/www/CRM-Redesign/dist/table.sql'
+0|usistem  |     at async open (node:internal/fs/promises:638:25)
+0|usistem  |     at async Object.readFile (node:internal/fs/promises:1238:14)
+0|usistem  |     at async n._rawEnsureSessionStoreTable (/var/www/CRM-Redesign/dist/index.cjs:70:28756)
+0|usistem  |     at async n._asyncQuery (/var/www/CRM-Redesign/dist/index.cjs:70:29841) {
+0|usistem  |   errno: -2,
+0|usistem  |   code: 'ENOENT',
+0|usistem  |   syscall: 'open',
+0|usistem  |   path: '/var/www/CRM-Redesign/dist/table.sql'
+0|usistem  | }
+
+0|usistem  | 9:35:53 PM [express] serving on port 5000
+0|usistem  | Session save error: Error: ENOENT: no such file or directory, open '/var/www/CRM-Redesign/dist/table.sql'
+0|usistem  |     at async open (node:internal/fs/promises:638:25)
+0|usistem  |     at async Object.readFile (node:internal/fs/promises:1238:14)
+0|usistem  |     at async n._rawEnsureSessionStoreTable (/var/www/CRM-Redesign/dist/index.cjs:70:28756)
+0|usistem  |     at async n._asyncQuery (/var/www/CRM-Redesign/dist/index.cjs:70:29841) {
+0|usistem  |   errno: -2,
+0|usistem  |   code: 'ENOENT',
+0|usistem  |   syscall: 'open',
+0|usistem  |   path: '/var/www/CRM-Redesign/dist/table.sql'
+0|usistem  | }
+0|usistem  | 9:36:10 PM [express] POST /api/auth/login 500 in 71ms :: {"error":"Session error"}
+0|usistem  | 9:36:17 PM [express] GET /api/auth/me 401 in 2ms :: {"error":"Unauthorized"}
+0|usistem  | Session save error: Error: ENOENT: no such file or directory, open '/var/www/CRM-Redesign/dist/table.sql'
+0|usistem  |     at async open (node:internal/fs/promises:638:25)
+0|usistem  |     at async Object.readFile (node:internal/fs/promises:1238:14)
+0|usistem  |     at async n._rawEnsureSessionStoreTable (/var/www/CRM-Redesign/dist/index.cjs:70:28756)
+0|usistem  |     at async n._asyncQuery (/var/www/CRM-Redesign/dist/index.cjs:70:29841) {
+0|usistem  |   errno: -2,
+0|usistem  |   code: 'ENOENT',
+0|usistem  |   syscall: 'open',
+0|usistem  |   path: '/var/www/CRM-Redesign/dist/table.sql'
+0|usistem  | }
+0|usistem  | 9:36:19 PM [express] POST /api/auth/login 500 in 54ms :: {"error":"Session error"}
