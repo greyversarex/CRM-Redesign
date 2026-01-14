@@ -75,7 +75,7 @@ export async function registerRoutes(
         secure: isProduction,
         httpOnly: true,
         maxAge: 24 * 60 * 60 * 1000,
-        sameSite: isProduction ? "none" : "lax",
+        sameSite: "lax",
       },
     })
   );
