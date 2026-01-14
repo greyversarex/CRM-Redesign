@@ -1,0 +1,33 @@
+/root/.pm2/logs/usistem-error.log last 15 lines:
+0|usistem  |     at Fn.handle_error (/var/www/CRM-Redesign/dist/index.cjs:38:3052)
+0|usistem  |     at S (/var/www/CRM-Redesign/dist/index.cjs:38:8334)
+0|usistem  |     at /var/www/CRM-Redesign/dist/index.cjs:38:7951
+0|usistem  |     at Hr.process_params (/var/www/CRM-Redesign/dist/index.cjs:38:8474)
+0|usistem  | Error [ERR_HTTP_HEADERS_SENT]: Cannot set headers after they are sent to the client
+0|usistem  |     at ServerResponse.setHeader (node:_http_outgoing:699:11)
+0|usistem  |     at me.set.me.header (/var/www/CRM-Redesign/dist/index.cjs:53:25022)
+0|usistem  |     at me.send (/var/www/CRM-Redesign/dist/index.cjs:53:20561)
+0|usistem  |     at me.json (/var/www/CRM-Redesign/dist/index.cjs:53:21691)
+0|usistem  |     at e.json (/var/www/CRM-Redesign/dist/index.cjs:76:116077)
+0|usistem  |     at /var/www/CRM-Redesign/dist/index.cjs:76:116406
+0|usistem  |     at Fn.handle_error (/var/www/CRM-Redesign/dist/index.cjs:38:3052)
+0|usistem  |     at S (/var/www/CRM-Redesign/dist/index.cjs:38:8334)
+0|usistem  |     at /var/www/CRM-Redesign/dist/index.cjs:38:7951
+0|usistem  |     at Hr.process_params (/var/www/CRM-Redesign/dist/index.cjs:38:8474)
+
+/root/.pm2/logs/usistem-out.log last 15 lines:
+0|usistem  | 9:04:17 PM [express] GET /api/services 401 in 0ms :: {"error":"Unauthorized"}
+0|usistem  | 9:04:23 PM [express] POST /api/services 401 in 1ms :: {"error":"Unauthorized"}
+0|usistem  | 9:12:46 PM [express] serving on port 5000
+0|usistem  | 9:17:06 PM [express] GET /api/auth/me 401 in 2ms :: {"error":"Unauthorized"}
+0|usistem  | 9:17:09 PM [express] POST /api/auth/login 200 in 55ms :: {"id":"87de5c06-0108-4c4e-bacb-f656a972273b","role":"admin","fullName":"Администратор","login":"admin"}
+0|usistem  | 9:17:09 PM [express] GET /api/records/counts/2026-01 401 in 1ms :: {"error":"Unauthorized"}
+0|usistem  | 9:17:09 PM [express] GET /api/earnings/2026-01 401 in 1ms :: {"error":"Unauthorized"}
+0|usistem  | 9:17:09 PM [express] GET /api/records 401 in 0ms :: {"error":"Unauthorized"}
+0|usistem  | 9:17:09 PM [express] GET /api/records 401 in 1ms :: {"error":"Unauthorized"}
+0|usistem  | 9:17:12 PM [express] GET /api/records/counts/2026-01 401 in 1ms :: {"error":"Unauthorized"}
+0|usistem  | 9:17:12 PM [express] GET /api/earnings/2026-01 401 in 1ms :: {"error":"Unauthorized"}
+0|usistem  | 9:17:12 PM [express] GET /api/records 401 in 1ms :: {"error":"Unauthorized"}
+0|usistem  | 9:17:12 PM [express] GET /api/records 401 in 1ms :: {"error":"Unauthorized"}
+0|usistem  | 9:17:13 PM [express] GET /api/services 401 in 1ms :: {"error":"Unauthorized"}
+0|usistem  | 9:17:18 PM [express] POST /api/services 401 in 1ms :: {"error":"Unauthorized"}
