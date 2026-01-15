@@ -3,6 +3,8 @@ import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 import { autoSeed } from "./autoSeed";
+import cron from "node-cron";
+import { checkAndSendRecordNotifications } from "./push";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -96,6 +98,12 @@ app.use((req, res, next) => {
     },
     () => {
       log(`serving on port ${port}`);
+      
+      // Start notification scheduler - check every minute
+      cron.schedule("* * * * *", async () => {
+        await checkAndSendRecordNotifications();
+      });
+      log("Notification scheduler started");
     },
   );
 })();

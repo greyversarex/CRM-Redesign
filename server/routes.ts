@@ -4,10 +4,11 @@ import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import { pool } from "./db";
 import { storage } from "./storage";
-import { insertClientSchema, insertServiceSchema, insertRecordSchema, insertIncomeSchema, insertExpenseSchema } from "@shared/schema";
+import { insertClientSchema, insertServiceSchema, insertRecordSchema, insertIncomeSchema, insertExpenseSchema, insertPushSubscriptionSchema } from "@shared/schema";
 import { z } from "zod";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
+import { getVapidPublicKey } from "./push";
 
 const PgStore = connectPgSimple(session);
 
@@ -411,6 +412,45 @@ export async function registerRoutes(
       res.json(analytics);
     } catch (error) {
       res.status(404).json({ error: "Employee not found" });
+    }
+  });
+
+  // Push notification endpoints
+  app.get("/api/push/public-key", (req, res) => {
+    res.json({ publicKey: getVapidPublicKey() });
+  });
+
+  app.post("/api/push/subscribe", requireAuth, async (req, res) => {
+    try {
+      const { endpoint, keys } = req.body;
+      if (!endpoint || !keys?.p256dh || !keys?.auth) {
+        return res.status(400).json({ error: "Invalid subscription data" });
+      }
+
+      const subscription = await storage.savePushSubscription({
+        userId: req.session.userId!,
+        endpoint,
+        p256dh: keys.p256dh,
+        auth: keys.auth,
+      });
+
+      res.json({ success: true, id: subscription.id });
+    } catch (error) {
+      console.error("Push subscribe error:", error);
+      res.status(500).json({ error: "Failed to save subscription" });
+    }
+  });
+
+  app.delete("/api/push/unsubscribe", requireAuth, async (req, res) => {
+    try {
+      const { endpoint } = req.body;
+      if (!endpoint) {
+        return res.status(400).json({ error: "Endpoint required" });
+      }
+      await storage.deletePushSubscription(endpoint);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to unsubscribe" });
     }
   });
 
