@@ -1,5 +1,5 @@
 import {
-  users, clients, services, records, incomes, expenses,
+  users, clients, services, records, incomes, expenses, pushSubscriptions,
   type User, type InsertUser,
   type Client, type InsertClient,
   type Service, type InsertService,
@@ -8,9 +8,10 @@ import {
   type Expense, type InsertExpense,
   type RecordWithRelations,
   type IncomeWithRelations,
+  type PushSubscription, type InsertPushSubscription,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, gte, lte, sql } from "drizzle-orm";
+import { eq, and, gte, lte, sql, isNull, or } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -63,6 +64,16 @@ export interface IStorage {
     totalRevenue: number;
     totalServices: number;
   }>;
+  
+  // Push subscription methods
+  savePushSubscription(subscription: InsertPushSubscription): Promise<PushSubscription>;
+  getPushSubscriptionsByUserId(userId: string): Promise<PushSubscription[]>;
+  getAllPushSubscriptions(): Promise<PushSubscription[]>;
+  deletePushSubscription(endpoint: string): Promise<void>;
+  
+  // Records needing notifications
+  getRecordsNeedingNotification(): Promise<RecordWithRelations[]>;
+  markRecordNotified(recordId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -447,6 +458,82 @@ export class DatabaseStorage implements IStorage {
       totalRevenue,
       totalServices,
     };
+  }
+
+  // Push subscription methods
+  async savePushSubscription(subscription: InsertPushSubscription): Promise<PushSubscription> {
+    // Upsert - update if endpoint exists, otherwise insert
+    const existing = await db.select().from(pushSubscriptions).where(eq(pushSubscriptions.endpoint, subscription.endpoint));
+    if (existing.length > 0) {
+      const [updated] = await db
+        .update(pushSubscriptions)
+        .set({ p256dh: subscription.p256dh, auth: subscription.auth, userId: subscription.userId })
+        .where(eq(pushSubscriptions.endpoint, subscription.endpoint))
+        .returning();
+      return updated;
+    }
+    const [result] = await db.insert(pushSubscriptions).values(subscription).returning();
+    return result;
+  }
+
+  async getPushSubscriptionsByUserId(userId: string): Promise<PushSubscription[]> {
+    return db.select().from(pushSubscriptions).where(eq(pushSubscriptions.userId, userId));
+  }
+
+  async getAllPushSubscriptions(): Promise<PushSubscription[]> {
+    return db.select().from(pushSubscriptions);
+  }
+
+  async deletePushSubscription(endpoint: string): Promise<void> {
+    await db.delete(pushSubscriptions).where(eq(pushSubscriptions.endpoint, endpoint));
+  }
+
+  // Get records that need notification (reminder=true and within 1 hour of start, not yet notified)
+  async getRecordsNeedingNotification(): Promise<RecordWithRelations[]> {
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    
+    // Get records for today with reminder=true and status=pending, not yet notified
+    const result = await db
+      .select()
+      .from(records)
+      .where(
+        and(
+          eq(records.date, today),
+          eq(records.reminder, true),
+          eq(records.status, "pending"),
+          isNull(records.notificationSentAt)
+        )
+      )
+      .leftJoin(clients, eq(records.clientId, clients.id))
+      .leftJoin(services, eq(records.serviceId, services.id))
+      .leftJoin(users, eq(records.employeeId, users.id));
+
+    // Filter records that are within the next hour
+    const recordsToNotify = result
+      .filter((r) => {
+        if (!r.clients || !r.services || !r.users) return false;
+        const [recordHour, recordMinute] = r.records.time.split(':').map(Number);
+        const recordMinutes = recordHour * 60 + recordMinute;
+        const currentMinutes = currentHour * 60 + currentMinute;
+        const diff = recordMinutes - currentMinutes;
+        // Notify if within 60 minutes and not past
+        return diff > 0 && diff <= 60;
+      })
+      .map((r) => ({
+        ...r.records,
+        client: r.clients!,
+        service: r.services!,
+        employee: r.users!,
+      }));
+
+    return recordsToNotify;
+  }
+
+  async markRecordNotified(recordId: string): Promise<void> {
+    await db.update(records).set({ notificationSentAt: new Date() }).where(eq(records.id, recordId));
   }
 }
 

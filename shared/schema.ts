@@ -1,5 +1,5 @@
 import { sql, relations } from "drizzle-orm";
-import { pgTable, text, varchar, integer, date, boolean, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, date, boolean, pgEnum, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -52,6 +52,7 @@ export const records = pgTable("records", {
   time: text("time").notNull().default("09:00"),
   status: recordStatusEnum("status").notNull().default("pending"),
   reminder: boolean("reminder").notNull().default(false),
+  notificationSentAt: timestamp("notification_sent_at"),
 });
 
 export const recordsRelations = relations(records, ({ one, many }) => ({
@@ -96,13 +97,31 @@ export const expenses = pgTable("expenses", {
   reminder: boolean("reminder").notNull().default(false),
 });
 
+// Push subscriptions table for PWA notifications
+export const pushSubscriptions = pgTable("push_subscriptions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  endpoint: text("endpoint").notNull().unique(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
+export const pushSubscriptionsRelations = relations(pushSubscriptions, ({ one }) => ({
+  user: one(users, {
+    fields: [pushSubscriptions.userId],
+    references: [users.id],
+  }),
+}));
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export const insertClientSchema = createInsertSchema(clients).omit({ id: true });
 export const insertServiceSchema = createInsertSchema(services).omit({ id: true });
-export const insertRecordSchema = createInsertSchema(records).omit({ id: true });
+export const insertRecordSchema = createInsertSchema(records).omit({ id: true, notificationSentAt: true });
 export const insertIncomeSchema = createInsertSchema(incomes).omit({ id: true });
 export const insertExpenseSchema = createInsertSchema(expenses).omit({ id: true });
+export const insertPushSubscriptionSchema = createInsertSchema(pushSubscriptions).omit({ id: true, createdAt: true });
 
 // Login schema
 export const loginSchema = z.object({
@@ -123,6 +142,8 @@ export type Income = typeof incomes.$inferSelect;
 export type InsertIncome = z.infer<typeof insertIncomeSchema>;
 export type Expense = typeof expenses.$inferSelect;
 export type InsertExpense = z.infer<typeof insertExpenseSchema>;
+export type PushSubscription = typeof pushSubscriptions.$inferSelect;
+export type InsertPushSubscription = z.infer<typeof insertPushSubscriptionSchema>;
 
 // Extended types with relations
 export type RecordWithRelations = Record & {
