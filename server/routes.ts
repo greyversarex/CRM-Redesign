@@ -74,8 +74,8 @@ export async function registerRoutes(
       cookie: {
         secure: isProduction,
         httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000,
-        sameSite: "lax",
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days for PWA
+        sameSite: isProduction ? "none" : "lax",
       },
     })
   );
