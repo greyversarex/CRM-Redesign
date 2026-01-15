@@ -1,4 +1,4 @@
-const CACHE_NAME = 'u-sistem-v3';
+const CACHE_NAME = 'u-sistem-v4';
 const STATIC_ASSETS = [
   '/',
   '/index.html',

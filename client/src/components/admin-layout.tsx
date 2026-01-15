@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./app-sidebar";
 import { ThemeToggle } from "./theme-toggle";
+import { NotificationToggle } from "./notification-toggle";
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -20,7 +21,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         <div className="flex flex-col flex-1 overflow-hidden">
           <header className="flex items-center justify-between gap-2 px-4 py-3 border-b bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 text-white shadow-md">
             <SidebarTrigger data-testid="button-sidebar-toggle" />
-            <ThemeToggle />
+            <div className="flex items-center gap-2">
+              <NotificationToggle />
+              <ThemeToggle />
+            </div>
           </header>
           <main className="flex-1 overflow-auto bg-gradient-to-br from-emerald-100 via-teal-50 to-cyan-100 dark:from-emerald-950/40 dark:via-teal-950/30 dark:to-cyan-950/40">
             {children}

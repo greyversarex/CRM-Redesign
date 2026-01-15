@@ -1,12 +1,19 @@
 import webpush from 'web-push';
 import { storage } from './storage';
-import type { RecordWithRelations } from '@shared/schema';
 
-const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || 'BI8hYwp8OrsIbzXLTjPCgfl10j4tfKFOwNwyBeFBL_zDSZ6huurYQrtZLBWMuXDdOUpjfl6bV1ymz_-hgzQhULQ';
-const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || '6wnUZS3YphedrrPhetCEa-JWnHXZd9xjcTzMUBmXWE4';
+const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY;
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
 const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:admin@u-sistem.space';
 
-webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+let pushEnabled = false;
+
+if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+  pushEnabled = true;
+  console.log('[Push] VAPID keys configured successfully');
+} else {
+  console.warn('[Push] VAPID keys not configured. Push notifications disabled. Set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY environment variables.');
+}
 
 export function getVapidPublicKey(): string {
   return VAPID_PUBLIC_KEY;
