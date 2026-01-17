@@ -305,6 +305,19 @@ export async function registerRoutes(
     res.json(records);
   });
 
+  app.get("/api/records/employee/:employeeId", requireAuth, async (req, res) => {
+    const user = await storage.getUser(req.session.userId!);
+    if (!user || (user.role !== "admin" && user.role !== "manager")) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+    const { date } = req.query;
+    const records = await storage.getRecordsByEmployeeId(
+      req.params.employeeId,
+      date as string | undefined
+    );
+    res.json(records);
+  });
+
   app.get("/api/records/counts/:yearMonth", requireAuth, async (req, res) => {
     const [year, month] = req.params.yearMonth.split("-").map(Number);
     const counts = await storage.getRecordCountsByMonth(year, month);
@@ -431,7 +444,13 @@ export async function registerRoutes(
 
   app.get("/api/analytics/employees/:id", requireAdmin, async (req, res) => {
     try {
-      const analytics = await storage.getEmployeeDailyAnalytics(req.params.id);
+      const { startDate, endDate, serviceId } = req.query;
+      const options: { startDate?: string; endDate?: string; serviceId?: string } = {};
+      if (startDate) options.startDate = startDate as string;
+      if (endDate) options.endDate = endDate as string;
+      if (serviceId) options.serviceId = serviceId as string;
+      
+      const analytics = await storage.getEmployeeDailyAnalytics(req.params.id, options);
       res.json(analytics);
     } catch (error) {
       res.status(404).json({ error: "Employee not found" });

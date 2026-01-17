@@ -97,6 +97,8 @@ function RecordForm({
     mutationFn: (data: any) => apiRequest("POST", "/api/records", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/records"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/records/employee", employeeId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/records/my"] });
       toast({ title: "Запись создана" });
       onSuccess();
     },
@@ -247,15 +249,13 @@ export default function EmployeeRecordsPage() {
     },
   });
 
-  const { data: allRecords = [], isLoading } = useQuery<RecordWithRelations[]>({
-    queryKey: ["/api/records"],
+  const { data: employeeRecords = [], isLoading } = useQuery<RecordWithRelations[]>({
+    queryKey: ["/api/records/employee", employeeId],
   });
 
   const { data: services = [] } = useQuery<Service[]>({
     queryKey: ["/api/services"],
   });
-
-  const employeeRecords = allRecords.filter(r => r.employeeId === employeeId);
 
   const filteredRecords = employeeRecords.filter(record => {
     if (selectedDate && record.date !== selectedDate) return false;
@@ -267,6 +267,8 @@ export default function EmployeeRecordsPage() {
     mutationFn: ({ id, status }: { id: string; status: string }) =>
       apiRequest("PATCH", `/api/records/${id}`, { status }),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/records/employee", employeeId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/records/my"] });
       queryClient.invalidateQueries({ queryKey: ["/api/records"] });
       toast({ title: "Статус обновлен" });
     },

@@ -58,7 +58,7 @@ export interface IStorage {
     employeeStats: { id: string; fullName: string; completedServices: number; revenue: number }[];
   }>;
   
-  getEmployeeDailyAnalytics(employeeId: string): Promise<{
+  getEmployeeDailyAnalytics(employeeId: string, options?: { startDate?: string; endDate?: string; serviceId?: string }): Promise<{
     employee: { id: string; fullName: string };
     dailyStats: { date: string; revenue: number; completedServices: number }[];
     totalRevenue: number;
@@ -415,10 +415,25 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async getEmployeeDailyAnalytics(employeeId: string) {
+  async getEmployeeDailyAnalytics(employeeId: string, options?: { startDate?: string; endDate?: string; serviceId?: string }) {
     const employee = await this.getUser(employeeId);
     if (!employee) {
       throw new Error("Employee not found");
+    }
+
+    const conditions = [
+      eq(records.employeeId, employeeId),
+      eq(records.status, "done")
+    ];
+
+    if (options?.startDate) {
+      conditions.push(gte(records.date, options.startDate));
+    }
+    if (options?.endDate) {
+      conditions.push(lte(records.date, options.endDate));
+    }
+    if (options?.serviceId) {
+      conditions.push(eq(records.serviceId, options.serviceId));
     }
 
     const completedRecords = await db
@@ -428,23 +443,19 @@ export class DatabaseStorage implements IStorage {
       })
       .from(records)
       .leftJoin(services, eq(records.serviceId, services.id))
-      .where(
-        and(
-          eq(records.employeeId, employeeId),
-          eq(records.status, "done")
-        )
-      );
+      .where(and(...conditions));
 
     const dailyMap = new Map<string, { revenue: number; completedServices: number }>();
     let totalRevenue = 0;
     let totalServices = 0;
 
     for (const row of completedRecords) {
+      const price = row.price ?? 0;
       const existing = dailyMap.get(row.date) || { revenue: 0, completedServices: 0 };
-      existing.revenue += row.price || 0;
+      existing.revenue += price;
       existing.completedServices += 1;
       dailyMap.set(row.date, existing);
-      totalRevenue += row.price || 0;
+      totalRevenue += price;
       totalServices += 1;
     }
 

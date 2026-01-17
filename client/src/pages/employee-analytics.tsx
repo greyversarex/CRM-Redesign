@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import { format, parseISO } from "date-fns";
@@ -8,6 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { Service } from "@shared/schema";
 
 interface EmployeeAnalytics {
   employee: { id: string; fullName: string };
@@ -18,9 +23,24 @@ interface EmployeeAnalytics {
 
 export default function EmployeeAnalyticsPage() {
   const { id } = useParams<{ id: string }>();
+  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedService, setSelectedService] = useState("");
+
+  const filterParams: Record<string, string> = {};
+  if (selectedDate) {
+    filterParams.startDate = selectedDate;
+    filterParams.endDate = selectedDate;
+  }
+  if (selectedService && selectedService !== "all") {
+    filterParams.serviceId = selectedService;
+  }
 
   const { data: analytics, isLoading, error } = useQuery<EmployeeAnalytics>({
-    queryKey: ["/api/analytics/employees", id],
+    queryKey: ["/api/analytics/employees", id, Object.keys(filterParams).length > 0 ? filterParams : undefined].filter(Boolean),
+  });
+
+  const { data: services = [] } = useQuery<Service[]>({
+    queryKey: ["/api/services"],
   });
 
   if (isLoading) {
@@ -68,6 +88,54 @@ export default function EmployeeAnalyticsPage() {
           <p className="text-sm text-muted-foreground">Аналитика сотрудника</p>
         </div>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Фильтры</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-4">
+            <div className="space-y-2">
+              <Label>Дата</Label>
+              <Input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="w-auto"
+                data-testid="filter-date"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Услуга</Label>
+              <Select value={selectedService} onValueChange={setSelectedService}>
+                <SelectTrigger className="w-[200px]" data-testid="filter-service">
+                  <SelectValue placeholder="Все услуги" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Все услуги</SelectItem>
+                  {services.map((service) => (
+                    <SelectItem key={service.id} value={service.id}>
+                      {service.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-end">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSelectedDate("");
+                  setSelectedService("");
+                }}
+                data-testid="button-clear-filters"
+              >
+                Сбросить
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
