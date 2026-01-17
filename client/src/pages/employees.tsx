@@ -20,7 +20,7 @@ function EmployeeForm({ onSuccess }: { onSuccess: () => void }) {
   const [fullName, setFullName] = useState("");
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<"admin" | "employee">("employee");
+  const [role, setRole] = useState<"admin" | "manager" | "employee">("employee");
 
   const mutation = useMutation({
     mutationFn: (data: any) => apiRequest("POST", "/api/users", data),
@@ -71,12 +71,13 @@ function EmployeeForm({ onSuccess }: { onSuccess: () => void }) {
       </div>
       <div className="space-y-2">
         <Label>Роль</Label>
-        <Select value={role} onValueChange={(v) => setRole(v as "admin" | "employee")}>
+        <Select value={role} onValueChange={(v) => setRole(v as "admin" | "manager" | "employee")}>
           <SelectTrigger data-testid="select-employee-role">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="employee">Сотрудник</SelectItem>
+            <SelectItem value="manager">Менеджер</SelectItem>
             <SelectItem value="admin">Администратор</SelectItem>
           </SelectContent>
         </Select>
@@ -208,8 +209,8 @@ export default function EmployeesPage() {
                   </TableCell>
                   <TableCell className="text-muted-foreground">{user.login}</TableCell>
                   <TableCell>
-                    <Badge variant={user.role === "admin" ? "default" : "secondary"}>
-                      {user.role === "admin" ? "Администратор" : "Сотрудник"}
+                    <Badge variant={user.role === "admin" ? "default" : user.role === "manager" ? "outline" : "secondary"}>
+                      {user.role === "admin" ? "Администратор" : user.role === "manager" ? "Менеджер" : "Сотрудник"}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
