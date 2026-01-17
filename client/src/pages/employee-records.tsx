@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import { format } from "date-fns";
-import { ru } from "date-fns/locale";
 import { ArrowLeft, Plus, Calendar, Check, X, Clock, Search, UserPlus, Bell } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -260,7 +259,7 @@ export default function EmployeeRecordsPage() {
 
   const filteredRecords = employeeRecords.filter(record => {
     if (selectedDate && record.date !== selectedDate) return false;
-    if (selectedService && record.serviceId !== selectedService) return false;
+    if (selectedService && selectedService !== "all" && record.serviceId !== selectedService) return false;
     return true;
   });
 
