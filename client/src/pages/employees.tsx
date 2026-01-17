@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/lib/auth";
 import type { User as UserType } from "@shared/schema";
 
 function EmployeeForm({ onSuccess }: { onSuccess: () => void }) {
@@ -95,10 +96,15 @@ export default function EmployeesPage() {
   const [userToDelete, setUserToDelete] = useState<UserType | null>(null);
   const [recordsCount, setRecordsCount] = useState(0);
   const { toast } = useToast();
+  const { user: currentUser } = useAuth();
+  const isAdmin = currentUser?.role === "admin";
+  const isManager = currentUser?.role === "manager";
 
-  const { data: users = [], isLoading } = useQuery<UserType[]>({
+  const { data: allUsers = [], isLoading } = useQuery<UserType[]>({
     queryKey: ["/api/users"],
   });
+
+  const users = isManager ? allUsers.filter(u => u.role === "employee") : allUsers;
 
   const deleteMutation = useMutation({
     mutationFn: ({ id, cascade }: { id: string; cascade: boolean }) => 
@@ -152,20 +158,22 @@ export default function EmployeesPage() {
     <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3 sm:gap-4">
         <h1 className="text-2xl sm:text-3xl font-bold" data-testid="text-employees-title">Сотрудники</h1>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button data-testid="button-add-employee">
-              <Plus className="h-4 w-4 mr-2" />
-              Добавить сотрудника
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Новый сотрудник</DialogTitle>
-            </DialogHeader>
-            <EmployeeForm onSuccess={() => setIsDialogOpen(false)} />
-          </DialogContent>
-        </Dialog>
+        {isAdmin && (
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button data-testid="button-add-employee">
+                <Plus className="h-4 w-4 mr-2" />
+                Добавить сотрудника
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Новый сотрудник</DialogTitle>
+              </DialogHeader>
+              <EmployeeForm onSuccess={() => setIsDialogOpen(false)} />
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       {isLoading ? (
@@ -188,15 +196,15 @@ export default function EmployeesPage() {
               <TableRow>
                 <TableHead>ФИО</TableHead>
                 <TableHead>Логин</TableHead>
-                <TableHead>Роль</TableHead>
-                <TableHead className="text-right">Действия</TableHead>
+                {isAdmin && <TableHead>Роль</TableHead>}
+                {isAdmin && <TableHead className="text-right">Действия</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
               {users.map((user) => (
                 <TableRow key={user.id} data-testid={`employee-row-${user.id}`}>
                   <TableCell className="font-medium">
-                    <Link href={`/employees/${user.id}/analytics`}>
+                    <Link href={isManager ? `/employees/${user.id}/records` : `/employees/${user.id}/analytics`}>
                       <div className="flex items-center gap-2 cursor-pointer hover:text-primary transition-colors">
                         {user.role === "admin" ? (
                           <Shield className="h-4 w-4 text-primary" />
@@ -208,32 +216,36 @@ export default function EmployeesPage() {
                     </Link>
                   </TableCell>
                   <TableCell className="text-muted-foreground">{user.login}</TableCell>
-                  <TableCell>
-                    <Badge variant={user.role === "admin" ? "default" : user.role === "manager" ? "outline" : "secondary"}>
-                      {user.role === "admin" ? "Администратор" : user.role === "manager" ? "Менеджер" : "Сотрудник"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <Link href={`/employees/${user.id}/analytics`}>
+                  {isAdmin && (
+                    <TableCell>
+                      <Badge variant={user.role === "admin" ? "default" : user.role === "manager" ? "outline" : "secondary"}>
+                        {user.role === "admin" ? "Администратор" : user.role === "manager" ? "Менеджер" : "Сотрудник"}
+                      </Badge>
+                    </TableCell>
+                  )}
+                  {isAdmin && (
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Link href={`/employees/${user.id}/analytics`}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            data-testid={`button-analytics-${user.id}`}
+                          >
+                            <BarChart3 className="h-4 w-4" />
+                          </Button>
+                        </Link>
                         <Button
                           variant="ghost"
                           size="icon"
-                          data-testid={`button-analytics-${user.id}`}
+                          onClick={() => handleDeleteClick(user)}
+                          data-testid={`button-delete-employee-${user.id}`}
                         >
-                          <BarChart3 className="h-4 w-4" />
+                          <Trash2 className="h-4 w-4" />
                         </Button>
-                      </Link>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDeleteClick(user)}
-                        data-testid={`button-delete-employee-${user.id}`}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+                      </div>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>

@@ -19,6 +19,7 @@ import EmployeesPage from "@/pages/employees";
 import EmployeeAnalyticsPage from "@/pages/employee-analytics";
 import AnalyticsPage from "@/pages/analytics";
 import EmployeeDashboard from "@/pages/employee-dashboard";
+import EmployeeRecordsPage from "@/pages/employee-records";
 import NotFound from "@/pages/not-found";
 import { Loader2 } from "lucide-react";
 
@@ -49,6 +50,7 @@ function ManagerRouter() {
         <Route path="/clients" component={ClientsPage} />
         <Route path="/clients/:id" component={ClientDetailPage} />
         <Route path="/employees" component={EmployeesPage} />
+        <Route path="/employees/:id/records" component={EmployeeRecordsPage} />
         <Route component={NotFound} />
       </Switch>
     </AdminLayout>
@@ -72,7 +74,7 @@ function AppContent() {
   const [previousUser, setPreviousUser] = useState<typeof user>(null);
 
   useEffect(() => {
-    if (user && (user.role === "admin" || user.role === "manager") && !previousUser) {
+    if (user && user.role === "admin" && !previousUser) {
       setShowWelcome(true);
     }
     setPreviousUser(user);
@@ -90,7 +92,7 @@ function AppContent() {
     return <LoginPage />;
   }
 
-  if (showWelcome && (user.role === "admin" || user.role === "manager")) {
+  if (showWelcome && user.role === "admin") {
     return (
       <WelcomeEffect 
         userName={user.fullName} 
