@@ -175,7 +175,7 @@ function RecordForm({ onSuccess }: { onSuccess: () => void }) {
           <SelectContent>
             {services.map((service) => (
               <SelectItem key={service.id} value={service.id}>
-                {service.name} - {service.price} с
+                {service.name}
               </SelectItem>
             ))}
           </SelectContent>
