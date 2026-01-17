@@ -20,16 +20,20 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { RecordWithRelations, Client, Service } from "@shared/schema";
 
-function QuickAddClientForm({ onSuccess }: { onSuccess: () => void }) {
+function QuickAddClientForm({ onSuccess, onClientCreated }: { onSuccess: () => void; onClientCreated?: (clientId: string) => void }) {
   const { toast } = useToast();
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
 
   const mutation = useMutation({
     mutationFn: (data: any) => apiRequest("POST", "/api/clients", data),
-    onSuccess: () => {
+    onSuccess: async (response: Response) => {
+      const newClient = await response.json();
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
       toast({ title: "Клиент добавлен" });
+      if (onClientCreated && newClient?.id) {
+        onClientCreated(newClient.id);
+      }
       onSuccess();
     },
     onError: () => {
@@ -37,14 +41,13 @@ function QuickAddClientForm({ onSuccess }: { onSuccess: () => void }) {
     },
   });
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  function handleAddClient() {
     if (!fullName.trim()) return;
     mutation.mutate({ fullName, phone: phone || null });
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3 p-3 border rounded-lg bg-muted/30">
+    <div className="space-y-3 p-3 border rounded-lg bg-muted/30">
       <div className="space-y-2">
         <Label>ФИО клиента</Label>
         <Input
@@ -63,10 +66,10 @@ function QuickAddClientForm({ onSuccess }: { onSuccess: () => void }) {
           data-testid="input-quick-client-phone"
         />
       </div>
-      <Button type="submit" size="sm" className="w-full" disabled={mutation.isPending}>
+      <Button type="button" size="sm" className="w-full" disabled={mutation.isPending} onClick={handleAddClient}>
         {mutation.isPending ? "Добавление..." : "Добавить клиента"}
       </Button>
-    </form>
+    </div>
   );
 }
 
@@ -157,7 +160,10 @@ function RecordForm({ onSuccess }: { onSuccess: () => void }) {
           {showAddClient ? "Скрыть" : "Добавить нового клиента"}
         </Button>
         {showAddClient && (
-          <QuickAddClientForm onSuccess={() => setShowAddClient(false)} />
+          <QuickAddClientForm 
+            onSuccess={() => setShowAddClient(false)} 
+            onClientCreated={(id) => setClientId(id)}
+          />
         )}
       </div>
       <div className="space-y-2">
