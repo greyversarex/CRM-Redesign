@@ -17,6 +17,9 @@ A CRM system for managing clients, services, appointments, and finances with cal
 - Added client, service, and employee management pages
 - Implemented auto-income generation when records are marked as done
 - Added monthly analytics with employee performance tracking
+- Added date and service filters to employee analytics page (admin view)
+- Added API endpoint `/api/records/employee/:employeeId` for managers to view employee records
+- Fixed employee records page to properly display records for managers
 
 ## Test Credentials
 
