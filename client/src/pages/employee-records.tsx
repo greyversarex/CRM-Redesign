@@ -236,7 +236,7 @@ export default function EmployeeRecordsPage() {
   const params = useParams<{ id: string }>();
   const employeeId = params.id;
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [selectedService, setSelectedService] = useState("");
   const { toast } = useToast();
 

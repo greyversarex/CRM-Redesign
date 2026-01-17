@@ -23,7 +23,7 @@ interface EmployeeAnalytics {
 
 export default function EmployeeAnalyticsPage() {
   const { id } = useParams<{ id: string }>();
-  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [selectedService, setSelectedService] = useState("");
 
   const filterParams: Record<string, string> = {};
