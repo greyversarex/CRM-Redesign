@@ -193,7 +193,7 @@ export async function registerRoutes(
     res.json(client);
   });
 
-  app.post("/api/clients", requireAdminOrManager, async (req, res) => {
+  app.post("/api/clients", requireAuth, async (req, res) => {
     try {
       const data = insertClientSchema.parse(req.body);
       const client = await storage.createClient(data);
