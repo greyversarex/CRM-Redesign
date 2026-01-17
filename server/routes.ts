@@ -158,6 +158,15 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/users/:id", requireAdminOrManager, async (req, res) => {
+    const user = await storage.getUser(req.params.id);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    const { passwordHash, ...safeUser } = user;
+    res.json(safeUser);
+  });
+
   app.get("/api/users/:id/records-count", requireAdmin, async (req, res) => {
     const count = await storage.getUserRecordsCount(req.params.id);
     res.json({ count });
