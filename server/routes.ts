@@ -55,6 +55,17 @@ async function requireAdmin(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
+async function requireAdminOrManager(req: Request, res: Response, next: NextFunction) {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  const user = await storage.getUser(req.session.userId);
+  if (!user || (user.role !== "admin" && user.role !== "manager")) {
+    return res.status(403).json({ error: "Forbidden" });
+  }
+  next();
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -129,7 +140,7 @@ export async function registerRoutes(
     res.json(safeUser);
   });
 
-  app.get("/api/users", requireAdmin, async (req, res) => {
+  app.get("/api/users", requireAdminOrManager, async (req, res) => {
     const allUsers = await storage.getAllUsers();
     const safeUsers = allUsers.map(({ passwordHash, ...u }) => u);
     res.json(safeUsers);
@@ -182,7 +193,7 @@ export async function registerRoutes(
     res.json(client);
   });
 
-  app.post("/api/clients", requireAdmin, async (req, res) => {
+  app.post("/api/clients", requireAdminOrManager, async (req, res) => {
     try {
       const data = insertClientSchema.parse(req.body);
       const client = await storage.createClient(data);
@@ -195,7 +206,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/clients/:id", requireAdmin, async (req, res) => {
+  app.patch("/api/clients/:id", requireAdminOrManager, async (req, res) => {
     const client = await storage.updateClient(req.params.id, req.body);
     if (!client) {
       return res.status(404).json({ error: "Client not found" });
@@ -299,9 +310,12 @@ export async function registerRoutes(
 
   app.post("/api/records", requireAuth, async (req, res) => {
     try {
+      const user = await storage.getUser(req.session.userId!);
+      const canSelectEmployee = user?.role === "admin" || user?.role === "manager";
+      
       const data = {
         ...req.body,
-        employeeId: req.session.userId!,
+        employeeId: canSelectEmployee && req.body.employeeId ? req.body.employeeId : req.session.userId!,
       };
       const record = await storage.createRecord(data);
       res.json(record);

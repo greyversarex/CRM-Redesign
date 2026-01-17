@@ -19,7 +19,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import type { RecordWithRelations, Client, Service, IncomeWithRelations, Expense } from "@shared/schema";
+import { useAuth } from "@/lib/auth";
+import type { RecordWithRelations, Client, Service, IncomeWithRelations, Expense, User } from "@shared/schema";
 
 function QuickAddClientForm({ onSuccess }: { onSuccess: () => void }) {
   const { toast } = useToast();
@@ -81,8 +82,14 @@ function RecordForm({
   record?: RecordWithRelations;
 }) {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
+  const isManager = user?.role === "manager";
+  const canSelectEmployee = isAdmin || isManager;
+  
   const [clientId, setClientId] = useState(record?.clientId || "");
   const [serviceId, setServiceId] = useState(record?.serviceId || "");
+  const [employeeId, setEmployeeId] = useState(record?.employeeId || "");
   const [selectedDate, setSelectedDate] = useState(record?.date || date);
   const [time, setTime] = useState(record?.time || "09:00");
   const [reminder, setReminder] = useState(record?.reminder || false);
@@ -91,8 +98,13 @@ function RecordForm({
 
   const { data: clients = [] } = useQuery<Client[]>({ queryKey: ["/api/clients"] });
   const { data: services = [] } = useQuery<Service[]>({ queryKey: ["/api/services"] });
+  const { data: employees = [] } = useQuery<Omit<User, "passwordHash">[]>({ 
+    queryKey: ["/api/users"],
+    enabled: canSelectEmployee 
+  });
 
   const selectedClient = clients.find(c => c.id === clientId);
+  const selectedEmployee = employees.find(e => e.id === employeeId);
 
   const mutation = useMutation({
     mutationFn: async (data: any) => {
@@ -115,7 +127,11 @@ function RecordForm({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    mutation.mutate({ clientId, serviceId, date: selectedDate, time, reminder });
+    const data: any = { clientId, serviceId, date: selectedDate, time, reminder };
+    if (canSelectEmployee && employeeId) {
+      data.employeeId = employeeId;
+    }
+    mutation.mutate(data);
   }
 
   return (
@@ -176,6 +192,23 @@ function RecordForm({
           <QuickAddClientForm onSuccess={() => setShowAddClient(false)} />
         )}
       </div>
+      {canSelectEmployee && (
+        <div className="space-y-2">
+          <Label>Сотрудник</Label>
+          <Select value={employeeId} onValueChange={setEmployeeId}>
+            <SelectTrigger className="bg-white dark:bg-white dark:text-black" data-testid="select-employee">
+              <SelectValue placeholder="Выберите сотрудника" />
+            </SelectTrigger>
+            <SelectContent>
+              {employees.filter(e => e.role === "employee").map((employee) => (
+                <SelectItem key={employee.id} value={employee.id}>
+                  {employee.fullName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
       <div className="space-y-2">
         <Label>Услуга</Label>
         <Select value={serviceId} onValueChange={setServiceId}>
@@ -185,7 +218,7 @@ function RecordForm({
           <SelectContent>
             {services.map((service) => (
               <SelectItem key={service.id} value={service.id}>
-                {service.name} - {service.price} с
+                {isAdmin ? `${service.name} - ${service.price} с` : service.name}
               </SelectItem>
             ))}
           </SelectContent>
@@ -308,6 +341,8 @@ function FinanceForm({
 function RecordsTab({ date }: { date: string }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
 
   const { data: records = [], isLoading } = useQuery<RecordWithRelations[]>({
     queryKey: ["/api/records", { date }],
@@ -382,7 +417,7 @@ function RecordsTab({ date }: { date: string }) {
                       {record.reminder && <Bell className="h-4 w-4 text-primary" />}
                     </div>
                     <p className="text-xs sm:text-sm text-muted-foreground">{record.service.name}</p>
-                    <p className="text-xs sm:text-sm font-medium text-primary mt-1">{record.service.price} с</p>
+                    {isAdmin && <p className="text-xs sm:text-sm font-medium text-primary mt-1">{record.service.price} с</p>}
                     <p className="text-xs text-muted-foreground mt-1">
                       Сотрудник: {record.employee.fullName}
                     </p>
@@ -787,7 +822,9 @@ function AnalyticsTab({ date }: { date: string }) {
 
 export default function DayPage() {
   const { date } = useParams<{ date: string }>();
+  const { user } = useAuth();
   const formattedDate = date ? format(parseISO(date), "d MMMM yyyy", { locale: ru }) : "";
+  const isAdmin = user?.role === "admin";
 
   return (
     <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
@@ -804,20 +841,24 @@ export default function DayPage() {
       </div>
 
       <Tabs defaultValue="records" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className={`grid w-full ${isAdmin ? "grid-cols-3" : "grid-cols-1"}`}>
           <TabsTrigger value="records" className="text-xs sm:text-sm" data-testid="tab-records">Записи</TabsTrigger>
-          <TabsTrigger value="finance" className="text-xs sm:text-sm" data-testid="tab-finance">Финансы</TabsTrigger>
-          <TabsTrigger value="analytics" className="text-xs sm:text-sm" data-testid="tab-analytics">Аналитика</TabsTrigger>
+          {isAdmin && <TabsTrigger value="finance" className="text-xs sm:text-sm" data-testid="tab-finance">Финансы</TabsTrigger>}
+          {isAdmin && <TabsTrigger value="analytics" className="text-xs sm:text-sm" data-testid="tab-analytics">Аналитика</TabsTrigger>}
         </TabsList>
         <TabsContent value="records" className="mt-4 sm:mt-6">
           {date && <RecordsTab date={date} />}
         </TabsContent>
-        <TabsContent value="finance" className="mt-4 sm:mt-6">
-          {date && <FinanceTab date={date} />}
-        </TabsContent>
-        <TabsContent value="analytics" className="mt-4 sm:mt-6">
-          {date && <AnalyticsTab date={date} />}
-        </TabsContent>
+        {isAdmin && (
+          <TabsContent value="finance" className="mt-4 sm:mt-6">
+            {date && <FinanceTab date={date} />}
+          </TabsContent>
+        )}
+        {isAdmin && (
+          <TabsContent value="analytics" className="mt-4 sm:mt-6">
+            {date && <AnalyticsTab date={date} />}
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );

@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, isTomorrow, addMonths, subMonths, getDay } from "date-fns";
 import { ru } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Clock, User, Check, X, Bell, Plus, Search, UserPlus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, User as UserIcon, Check, X, Bell, Plus, Search, UserPlus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +18,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import type { RecordWithRelations, Client, Service } from "@shared/schema";
+import { useAuth } from "@/lib/auth";
+import type { RecordWithRelations, Client, Service, User } from "@shared/schema";
 
 function QuickAddClientForm({ onSuccess }: { onSuccess: () => void }) {
   const { toast } = useToast();
@@ -72,8 +73,14 @@ function QuickAddClientForm({ onSuccess }: { onSuccess: () => void }) {
 
 function QuickRecordForm({ date, onSuccess }: { date: string; onSuccess: () => void }) {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
+  const isManager = user?.role === "manager";
+  const canSelectEmployee = isAdmin || isManager;
+  
   const [clientId, setClientId] = useState("");
   const [serviceId, setServiceId] = useState("");
+  const [employeeId, setEmployeeId] = useState("");
   const [time, setTime] = useState("09:00");
   const [reminder, setReminder] = useState(false);
   const [clientOpen, setClientOpen] = useState(false);
@@ -81,6 +88,10 @@ function QuickRecordForm({ date, onSuccess }: { date: string; onSuccess: () => v
 
   const { data: clients = [] } = useQuery<Client[]>({ queryKey: ["/api/clients"] });
   const { data: services = [] } = useQuery<Service[]>({ queryKey: ["/api/services"] });
+  const { data: employees = [] } = useQuery<Omit<User, "passwordHash">[]>({ 
+    queryKey: ["/api/users"],
+    enabled: canSelectEmployee 
+  });
 
   const selectedClient = clients.find(c => c.id === clientId);
 
@@ -100,7 +111,11 @@ function QuickRecordForm({ date, onSuccess }: { date: string; onSuccess: () => v
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    mutation.mutate({ clientId, serviceId, date, time, reminder });
+    const data: any = { clientId, serviceId, date, time, reminder };
+    if (canSelectEmployee && employeeId) {
+      data.employeeId = employeeId;
+    }
+    mutation.mutate(data);
   }
 
   return (
@@ -159,6 +174,23 @@ function QuickRecordForm({ date, onSuccess }: { date: string; onSuccess: () => v
           <QuickAddClientForm onSuccess={() => setShowAddClient(false)} />
         )}
       </div>
+      {canSelectEmployee && (
+        <div className="space-y-2">
+          <Label>Сотрудник</Label>
+          <Select value={employeeId} onValueChange={setEmployeeId}>
+            <SelectTrigger data-testid="select-employee-dashboard">
+              <SelectValue placeholder="Выберите сотрудника" />
+            </SelectTrigger>
+            <SelectContent>
+              {employees.filter(e => e.role === "employee").map((employee) => (
+                <SelectItem key={employee.id} value={employee.id}>
+                  {employee.fullName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
       <div className="space-y-2">
         <Label>Услуга</Label>
         <Select value={serviceId} onValueChange={setServiceId}>
@@ -168,7 +200,7 @@ function QuickRecordForm({ date, onSuccess }: { date: string; onSuccess: () => v
           <SelectContent>
             {services.map((service) => (
               <SelectItem key={service.id} value={service.id}>
-                {service.name} - {service.price} с
+                {isAdmin ? `${service.name} - ${service.price} с` : service.name}
               </SelectItem>
             ))}
           </SelectContent>
@@ -236,7 +268,7 @@ function RecordCard({ record }: { record: RecordWithRelations }) {
       </div>
       <p className="text-xs text-muted-foreground mt-1">{record.service.name}</p>
       <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
-        <User className="h-3 w-3 shrink-0" />
+        <UserIcon className="h-3 w-3 shrink-0" />
         <span className="truncate">{record.employee.fullName}</span>
         {record.reminder && (
           <Bell className="h-3 w-3 text-primary ml-auto shrink-0" />
@@ -314,6 +346,8 @@ function MonthCalendar({
   onNextMonth: () => void;
   onToday: () => void;
 }) {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const monthStart = startOfMonth(baseDate);
   const monthEnd = endOfMonth(baseDate);
   const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
@@ -324,6 +358,7 @@ function MonthCalendar({
 
   const { data: dailyEarnings = {} } = useQuery<Record<string, number>>({
     queryKey: ["/api/earnings", format(baseDate, "yyyy-MM")],
+    enabled: isAdmin,
   });
 
   const startDayOfWeek = getDay(monthStart);
@@ -412,7 +447,7 @@ function MonthCalendar({
                   }`}
                 >
                   <span className="text-base sm:text-lg">{format(day, "d")}</span>
-                  {earnings > 0 && (
+                  {isAdmin && earnings > 0 && (
                     <span className={`text-[10px] sm:text-xs font-medium ${isCurrentDay ? "text-primary-foreground/90" : "text-green-600 dark:text-green-400"}`}>
                       +{earnings} с
                     </span>

@@ -4,7 +4,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Enums
-export const userRoleEnum = pgEnum("user_role", ["admin", "employee"]);
+export const userRoleEnum = pgEnum("user_role", ["admin", "manager", "employee"]);
 export const recordStatusEnum = pgEnum("record_status", ["pending", "done", "canceled"]);
 
 // Users table (admin and employees)

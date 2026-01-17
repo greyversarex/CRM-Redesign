@@ -2,16 +2,19 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { ArrowLeft, Phone, User, Calendar, Clock, Check, X } from "lucide-react";
+import { ArrowLeft, Phone, Calendar, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/lib/auth";
 import type { Client, RecordWithRelations } from "@shared/schema";
 
 export default function ClientDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
 
   const { data: client, isLoading: loadingClient } = useQuery<Client>({
     queryKey: ["/api/clients", id],
@@ -105,7 +108,7 @@ export default function ClientDetailPage() {
                     <TableCell>
                       <div>
                         <p className="font-medium">{record.service.name}</p>
-                        <p className="text-sm text-muted-foreground">{record.service.price} с</p>
+                        {isAdmin && <p className="text-sm text-muted-foreground">{record.service.price} с</p>}
                       </div>
                     </TableCell>
                     <TableCell>{record.employee.fullName}</TableCell>

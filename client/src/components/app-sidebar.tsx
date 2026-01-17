@@ -16,17 +16,21 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
-const menuItems = [
-  { title: "Календарь", url: "/", icon: CalendarRange, gradient: "from-emerald-400 to-teal-500", shadow: "shadow-emerald-500/30" },
-  { title: "Клиенты", url: "/clients", icon: Users2, gradient: "from-blue-400 to-indigo-500", shadow: "shadow-blue-500/30" },
-  { title: "Услуги", url: "/services", icon: Briefcase, gradient: "from-rose-400 to-pink-500", shadow: "shadow-rose-500/30" },
-  { title: "Аналитика", url: "/analytics", icon: LineChart, gradient: "from-amber-400 to-orange-500", shadow: "shadow-amber-500/30" },
-  { title: "Сотрудники", url: "/employees", icon: UserCog, gradient: "from-violet-400 to-purple-500", shadow: "shadow-violet-500/30" },
+const allMenuItems = [
+  { title: "Календарь", url: "/", icon: CalendarRange, gradient: "from-emerald-400 to-teal-500", shadow: "shadow-emerald-500/30", roles: ["admin", "manager"] },
+  { title: "Клиенты", url: "/clients", icon: Users2, gradient: "from-blue-400 to-indigo-500", shadow: "shadow-blue-500/30", roles: ["admin", "manager"] },
+  { title: "Услуги", url: "/services", icon: Briefcase, gradient: "from-rose-400 to-pink-500", shadow: "shadow-rose-500/30", roles: ["admin"] },
+  { title: "Аналитика", url: "/analytics", icon: LineChart, gradient: "from-amber-400 to-orange-500", shadow: "shadow-amber-500/30", roles: ["admin"] },
+  { title: "Сотрудники", url: "/employees", icon: UserCog, gradient: "from-violet-400 to-purple-500", shadow: "shadow-violet-500/30", roles: ["admin", "manager"] },
 ];
 
 export function AppSidebar() {
   const [location] = useLocation();
   const { user, logout } = useAuth();
+
+  const menuItems = allMenuItems.filter(item => 
+    user?.role && item.roles.includes(user.role)
+  );
 
   const initials = user?.fullName
     .split(" ")
@@ -82,7 +86,7 @@ export function AppSidebar() {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate">{user?.fullName}</p>
             <p className="text-xs text-muted-foreground capitalize">
-              {user?.role === "admin" ? "Администратор" : "Сотрудник"}
+              {user?.role === "admin" ? "Администратор" : user?.role === "manager" ? "Менеджер" : "Сотрудник"}
             </p>
           </div>
           <Button

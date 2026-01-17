@@ -40,6 +40,21 @@ function AdminRouter() {
   );
 }
 
+function ManagerRouter() {
+  return (
+    <AdminLayout>
+      <Switch>
+        <Route path="/" component={Dashboard} />
+        <Route path="/day/:date" component={DayPage} />
+        <Route path="/clients" component={ClientsPage} />
+        <Route path="/clients/:id" component={ClientDetailPage} />
+        <Route path="/employees" component={EmployeesPage} />
+        <Route component={NotFound} />
+      </Switch>
+    </AdminLayout>
+  );
+}
+
 function EmployeeRouter() {
   return (
     <EmployeeLayout>
@@ -57,7 +72,7 @@ function AppContent() {
   const [previousUser, setPreviousUser] = useState<typeof user>(null);
 
   useEffect(() => {
-    if (user && user.role === "admin" && !previousUser) {
+    if (user && (user.role === "admin" || user.role === "manager") && !previousUser) {
       setShowWelcome(true);
     }
     setPreviousUser(user);
@@ -75,7 +90,7 @@ function AppContent() {
     return <LoginPage />;
   }
 
-  if (showWelcome && user.role === "admin") {
+  if (showWelcome && (user.role === "admin" || user.role === "manager")) {
     return (
       <WelcomeEffect 
         userName={user.fullName} 
@@ -86,6 +101,10 @@ function AppContent() {
 
   if (user.role === "admin") {
     return <AdminRouter />;
+  }
+
+  if (user.role === "manager") {
+    return <ManagerRouter />;
   }
 
   return <EmployeeRouter />;
