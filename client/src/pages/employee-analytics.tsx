@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import { format, parseISO } from "date-fns";
 import { ru } from "date-fns/locale";
-import { ArrowLeft, User, TrendingUp, Calendar, DollarSign, Briefcase } from "lucide-react";
+import { ArrowLeft, User, Calendar, DollarSign, Briefcase } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -137,7 +137,7 @@ export default function EmployeeAnalyticsPage() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -160,23 +160,6 @@ export default function EmployeeAnalyticsPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Всего услуг</p>
                 <p className="text-2xl font-bold">{analytics.totalServices}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <TrendingUp className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Средний чек</p>
-                <p className="text-2xl font-bold">
-                  {analytics.totalServices > 0
-                    ? Math.round(analytics.totalRevenue / analytics.totalServices)
-                    : 0} с
-                </p>
               </div>
             </div>
           </CardContent>
