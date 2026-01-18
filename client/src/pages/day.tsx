@@ -346,12 +346,22 @@ function FinanceForm({
 
 function RecordsTab({ date }: { date: string }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedService, setSelectedService] = useState("");
   const { toast } = useToast();
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
 
   const { data: records = [], isLoading } = useQuery<RecordWithRelations[]>({
     queryKey: ["/api/records", { date }],
+  });
+
+  const { data: services = [] } = useQuery<Service[]>({
+    queryKey: ["/api/services"],
+  });
+
+  const filteredRecords = records.filter(record => {
+    if (selectedService && selectedService !== "all" && record.serviceId !== selectedService) return false;
+    return true;
   });
 
   const updateMutation = useMutation({
@@ -387,7 +397,27 @@ function RecordsTab({ date }: { date: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2">
+          <Select value={selectedService} onValueChange={setSelectedService}>
+            <SelectTrigger className="w-[180px]" data-testid="filter-service-day">
+              <SelectValue placeholder="Все услуги" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Все услуги</SelectItem>
+              {services.map((service) => (
+                <SelectItem key={service.id} value={service.id}>
+                  {service.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {selectedService && selectedService !== "all" && (
+            <Button variant="ghost" size="sm" onClick={() => setSelectedService("")} data-testid="button-clear-service-filter">
+              Сбросить
+            </Button>
+          )}
+        </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button data-testid="button-add-record">
@@ -404,7 +434,7 @@ function RecordsTab({ date }: { date: string }) {
         </Dialog>
       </div>
 
-      {records.length === 0 ? (
+      {filteredRecords.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
             <Calendar className="h-12 w-12 mb-4 opacity-50" />
@@ -413,7 +443,7 @@ function RecordsTab({ date }: { date: string }) {
         </Card>
       ) : (
         <div className="space-y-3">
-          {records.map((record) => (
+          {filteredRecords.map((record) => (
             <Card key={record.id} data-testid={`day-record-${record.id}`}>
               <CardContent className="p-3 sm:p-4">
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
