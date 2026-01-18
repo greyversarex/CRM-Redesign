@@ -16,7 +16,7 @@ if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
 }
 
 export function getVapidPublicKey(): string {
-  return VAPID_PUBLIC_KEY;
+  return VAPID_PUBLIC_KEY || "";
 }
 
 interface PushPayload {

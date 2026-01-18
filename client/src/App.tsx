@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { AdminLayout } from "@/components/admin-layout";
 import { EmployeeLayout } from "@/components/employee-layout";
 import { WelcomeEffect } from "@/components/welcome-effect";
+import { isPushSupported, isPushSubscribed, subscribeToPush } from "@/lib/push";
 import LoginPage from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
 import DayPage from "@/pages/day";
@@ -79,6 +80,19 @@ function AppContent() {
     }
     setPreviousUser(user);
   }, [user, previousUser]);
+
+  useEffect(() => {
+    async function autoSubscribePush() {
+      if (!user) return;
+      const supported = await isPushSupported();
+      if (!supported) return;
+      const subscribed = await isPushSubscribed();
+      if (!subscribed) {
+        await subscribeToPush();
+      }
+    }
+    autoSubscribePush();
+  }, [user]);
 
   if (isLoading) {
     return (
