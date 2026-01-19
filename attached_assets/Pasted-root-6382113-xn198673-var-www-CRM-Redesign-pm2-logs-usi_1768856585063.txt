@@ -1,0 +1,55 @@
+root@6382113-xn198673:/var/www/CRM-Redesign# pm2 logs usistem --err --lines 50
+[TAILING] Tailing last 50 lines for [usistem] process (change the value with --lines option)
+/root/.pm2/logs/usistem-error.log last 50 lines:
+0|usistem  |     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+0|usistem  |     at async n._asyncQuery (/var/www/CRM-Redesign/dist/index.cjs:70:30016)
+0|usistem  | error: relation "session" does not exist
+0|usistem  |     at /var/www/CRM-Redesign/dist/index.cjs:70:13326
+0|usistem  |     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+0|usistem  |     at async n._asyncQuery (/var/www/CRM-Redesign/dist/index.cjs:70:30016)
+0|usistem  | error: relation "session" does not exist
+0|usistem  |     at /var/www/CRM-Redesign/dist/index.cjs:70:13326
+0|usistem  |     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+0|usistem  |     at async n._asyncQuery (/var/www/CRM-Redesign/dist/index.cjs:70:30016)
+0|usistem  | error: relation "session" does not exist
+0|usistem  |     at /var/www/CRM-Redesign/dist/index.cjs:70:13326
+0|usistem  |     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+0|usistem  |     at async n._asyncQuery (/var/www/CRM-Redesign/dist/index.cjs:70:30016)
+0|usistem  | error: relation "session" does not exist
+0|usistem  |     at /var/www/CRM-Redesign/dist/index.cjs:70:13326
+0|usistem  |     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+0|usistem  |     at async n._asyncQuery (/var/www/CRM-Redesign/dist/index.cjs:70:30016)
+0|usistem  | error: relation "session" does not exist
+0|usistem  |     at /var/www/CRM-Redesign/dist/index.cjs:70:13326
+0|usistem  |     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+0|usistem  |     at async n._asyncQuery (/var/www/CRM-Redesign/dist/index.cjs:70:30016)
+0|usistem  | error: relation "session" does not exist
+0|usistem  |     at /var/www/CRM-Redesign/dist/index.cjs:70:13326
+0|usistem  |     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+0|usistem  |     at async n._asyncQuery (/var/www/CRM-Redesign/dist/index.cjs:70:30016)
+0|usistem  | error: relation "session" does not exist
+0|usistem  |     at /var/www/CRM-Redesign/dist/index.cjs:70:13326
+0|usistem  |     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+0|usistem  |     at async n._asyncQuery (/var/www/CRM-Redesign/dist/index.cjs:70:30016)
+0|usistem  | error: relation "session" does not exist
+0|usistem  |     at /var/www/CRM-Redesign/dist/index.cjs:70:13326
+0|usistem  |     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+0|usistem  |     at async n._asyncQuery (/var/www/CRM-Redesign/dist/index.cjs:70:30016)
+0|usistem  | Error: Cannot find module 'web-push'
+0|usistem  | Require stack:
+0|usistem  | - /var/www/CRM-Redesign/dist/index.cjs
+0|usistem  |     at Function._resolveFilename (node:internal/modules/cjs/loader:1249:15)
+0|usistem  |     at Hook._require.Module.require (/usr/lib/node_modules/pm2/node_modules/require-in-the-middle/index.js:81:25)
+0|usistem  |     at require (node:internal/modules/helpers:138:16)
+0|usistem  |     at Object.<anonymous> (/var/www/CRM-Redesign/dist/index.cjs:76:109106)
+0|usistem  |     at Module._compile (node:internal/modules/cjs/loader:1565:14)
+0|usistem  |     at Object..js (node:internal/modules/cjs/loader:1708:10)
+0|usistem  |     at Module.load (node:internal/modules/cjs/loader:1318:32)
+0|usistem  |     at Function._load (node:internal/modules/cjs/loader:1128:12)
+0|usistem  |     at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+0|usistem  |     at wrapModuleLoad (node:internal/modules/cjs/loader:219:24) {
+0|usistem  |   code: 'MODULE_NOT_FOUND',
+0|usistem  |   requireStack: [ '/var/www/CRM-Redesign/dist/index.cjs' ]
+0|usistem  | }
+
+
