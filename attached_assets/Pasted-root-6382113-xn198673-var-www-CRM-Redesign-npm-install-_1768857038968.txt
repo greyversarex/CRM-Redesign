@@ -1,0 +1,101 @@
+root@6382113-xn198673:/var/www/CRM-Redesign# npm install --include=dev
+npm run build
+pm2 restart usistem --update-env
+
+added 108 packages, and audited 494 packages in 6s
+
+68 packages are looking for funding
+  run `npm fund` for details
+
+3 high severity vulnerabilities
+
+To address all issues, run:
+  npm audit fix
+
+Run `npm audit` for details.
+
+> rest-express@1.0.0 build
+> tsx script/build.ts
+
+building client...
+vite v7.3.0 building client environment for production...
+transforming (5) src/App.tsx
+A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+✓ 2917 modules transformed.
+../dist/public/index.html                                      2.22 kB │ gzip:   0.99 kB
+../dist/public/assets/2023.11.28_1768131251410-IrJZxoLo.jpg  508.70 kB
+../dist/public/assets/index-dsdKeoCV.css                      82.86 kB │ gzip:  13.26 kB
+../dist/public/assets/index-UJHoaDSo.js                      708.74 kB │ gzip: 210.38 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 15.04s
+building server...
+
+  dist/index.cjs  1.2mb ⚠️
+
+⚡ Done in 903ms
+copying connect-pg-simple table.sql...
+table.sql copied successfully
+[PM2] Applying action restartProcessId on app [usistem](ids: [ 0 ])
+[PM2] [usistem](0) ✓
+┌────┬────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name       │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ usistem    │ default     │ 1.0.0   │ fork    │ 253085   │ 0s     │ 11   │ online    │ 0%       │ 20.4mb   │ root     │ disabled │
+└────┴────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+root@6382113-xn198673:/var/www/CRM-Redesign# pm2 logs usistem --err --lines 50
+[TAILING] Tailing last 50 lines for [usistem] process (change the value with --lines option)
+/root/.pm2/logs/usistem-error.log last 50 lines:
+0|usistem  |     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+0|usistem  |     at async n._asyncQuery (/var/www/CRM-Redesign/dist/index.cjs:70:30016)
+0|usistem  | error: relation "session" does not exist
+0|usistem  |     at /var/www/CRM-Redesign/dist/index.cjs:70:13326
+0|usistem  |     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+0|usistem  |     at async n._asyncQuery (/var/www/CRM-Redesign/dist/index.cjs:70:30016)
+0|usistem  | error: relation "session" does not exist
+0|usistem  |     at /var/www/CRM-Redesign/dist/index.cjs:70:13326
+0|usistem  |     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+0|usistem  |     at async n._asyncQuery (/var/www/CRM-Redesign/dist/index.cjs:70:30016)
+0|usistem  | error: relation "session" does not exist
+0|usistem  |     at /var/www/CRM-Redesign/dist/index.cjs:70:13326
+0|usistem  |     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+0|usistem  |     at async n._asyncQuery (/var/www/CRM-Redesign/dist/index.cjs:70:30016)
+0|usistem  | error: relation "session" does not exist
+0|usistem  |     at /var/www/CRM-Redesign/dist/index.cjs:70:13326
+0|usistem  |     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+0|usistem  |     at async n._asyncQuery (/var/www/CRM-Redesign/dist/index.cjs:70:30016)
+0|usistem  | error: relation "session" does not exist
+0|usistem  |     at /var/www/CRM-Redesign/dist/index.cjs:70:13326
+0|usistem  |     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+0|usistem  |     at async n._asyncQuery (/var/www/CRM-Redesign/dist/index.cjs:70:30016)
+0|usistem  | Error: Cannot find module 'web-push'
+0|usistem  | Require stack:
+0|usistem  | - /var/www/CRM-Redesign/dist/index.cjs
+0|usistem  |     at Function._resolveFilename (node:internal/modules/cjs/loader:1249:15)
+0|usistem  |     at Hook._require.Module.require (/usr/lib/node_modules/pm2/node_modules/require-in-the-middle/index.js:81:25)
+0|usistem  |     at require (node:internal/modules/helpers:138:16)
+0|usistem  |     at Object.<anonymous> (/var/www/CRM-Redesign/dist/index.cjs:76:109106)
+0|usistem  |     at Module._compile (node:internal/modules/cjs/loader:1565:14)
+0|usistem  |     at Object..js (node:internal/modules/cjs/loader:1708:10)
+0|usistem  |     at Module.load (node:internal/modules/cjs/loader:1318:32)
+0|usistem  |     at Function._load (node:internal/modules/cjs/loader:1128:12)
+0|usistem  |     at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+0|usistem  |     at wrapModuleLoad (node:internal/modules/cjs/loader:219:24) {
+0|usistem  |   code: 'MODULE_NOT_FOUND',
+0|usistem  |   requireStack: [ '/var/www/CRM-Redesign/dist/index.cjs' ]
+0|usistem  | }
+0|usistem  | [Push] VAPID keys not configured. Push notifications disabled. Set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY environment variables.
+0|usistem  | Session save error: Error: ENOENT: no such file or directory, open '/var/www/CRM-Redesign/dist/table.sql'
+0|usistem  |     at async open (node:internal/fs/promises:638:25)
+0|usistem  |     at async Object.readFile (node:internal/fs/promises:1238:14)
+0|usistem  |     at async n._rawEnsureSessionStoreTable (/var/www/CRM-Redesign/dist/index.cjs:70:28756)
+0|usistem  |     at async n._asyncQuery (/var/www/CRM-Redesign/dist/index.cjs:70:29841) {
+0|usistem  |   errno: -2,
+0|usistem  |   code: 'ENOENT',
+0|usistem  |   syscall: 'open',
+0|usistem  |   path: '/var/www/CRM-Redesign/dist/table.sql'
+0|usistem  | }
+0|usistem  | [Push] VAPID keys not configured. Push notifications disabled. Set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY environment variables.
