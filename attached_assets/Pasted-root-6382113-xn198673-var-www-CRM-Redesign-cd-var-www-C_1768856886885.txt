@@ -1,0 +1,53 @@
+root@6382113-xn198673:/var/www/CRM-Redesign# cd /var/www/CRM-Redesign
+git pull
+remote: Enumerating objects: 14, done.
+remote: Counting objects: 100% (14/14), done.
+remote: Compressing objects: 100% (2/2), done.
+remote: Total 10 (delta 7), reused 10 (delta 7), pack-reused 0 (from 0)
+Unpacking objects: 100% (10/10), 2.41 KiB | 176.00 KiB/s, done.
+From https://github.com/greyversarex/CRM-Redesign
+   806e34f..85610cb  main       -> origin/main
+Updating 806e34f..85610cb
+Fast-forward
+ attached_assets/Pasted-root-6382113-xn198673-var-www-CRM-Redesign-pm2-logs-usi_1768856585063.txt | 55 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ attached_assets/Pasted-root-6382113-xn198673-var-www-CRM-Redesign-pm2-logs-usi_1768856711126.txt | 54 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ script/build.ts                                                                                  | 18 +++++++++++++++++-
+ 3 files changed, 126 insertions(+), 1 deletion(-)
+ create mode 100644 attached_assets/Pasted-root-6382113-xn198673-var-www-CRM-Redesign-pm2-logs-usi_1768856585063.txt
+ create mode 100644 attached_assets/Pasted-root-6382113-xn198673-var-www-CRM-Redesign-pm2-logs-usi_1768856711126.txt
+root@6382113-xn198673:/var/www/CRM-Redesign# npm install
+npm run build
+
+up to date, audited 386 packages in 2s
+
+53 packages are looking for funding
+  run `npm fund` for details
+
+3 high severity vulnerabilities
+
+To address all issues, run:
+  npm audit fix
+
+Run `npm audit` for details.
+
+> rest-express@1.0.0 build
+> tsx script/build.ts
+
+
+node:internal/modules/run_main:122
+    triggerUncaughtException(
+    ^
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'esbuild' imported from /var/www/CRM-Redesign/script/build.ts
+    at packageResolve (node:internal/modules/esm/resolve:857:9)
+    at moduleResolve (node:internal/modules/esm/resolve:926:18)
+    at defaultResolve (node:internal/modules/esm/resolve:1056:11)
+    at nextResolve (node:internal/modules/esm/hooks:748:28)
+    at resolveBase (file:///usr/local/lib/node_modules/tsx/dist/esm/index.mjs?1768856867932:2:3744)
+    at resolveDirectory (file:///usr/local/lib/node_modules/tsx/dist/esm/index.mjs?1768856867932:2:4243)
+    at resolveTsPaths (file:///usr/local/lib/node_modules/tsx/dist/esm/index.mjs?1768856867932:2:4984)
+    at async resolve (file:///usr/local/lib/node_modules/tsx/dist/esm/index.mjs?1768856867932:2:5355)
+    at async nextResolve (node:internal/modules/esm/hooks:748:22)
+    at async Hooks.resolve (node:internal/modules/esm/hooks:240:24) {
+  code: 'ERR_MODULE_NOT_FOUND'
+}
+
