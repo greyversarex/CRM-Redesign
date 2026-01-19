@@ -1,6 +1,10 @@
 import { build as esbuild } from "esbuild";
 import { build as viteBuild } from "vite";
-import { rm, readFile } from "fs/promises";
+import { rm, readFile, copyFile, mkdir } from "fs/promises";
+import { dirname, join } from "path";
+import { createRequire } from "module";
+
+const require = createRequire(import.meta.url);
 
 // server deps to bundle to reduce openat(2) syscalls
 // which helps cold start times
@@ -19,6 +23,7 @@ const allowlist = [
   "memorystore",
   "multer",
   "nanoid",
+  "node-cron",
   "nodemailer",
   "openai",
   "passport",
@@ -26,6 +31,7 @@ const allowlist = [
   "pg",
   "stripe",
   "uuid",
+  "web-push",
   "ws",
   "xlsx",
   "zod",
@@ -59,6 +65,16 @@ async function buildAll() {
     external: externals,
     logLevel: "info",
   });
+
+  console.log("copying connect-pg-simple table.sql...");
+  try {
+    const pgSimplePath = dirname(require.resolve("connect-pg-simple"));
+    const tableSqlSrc = join(pgSimplePath, "table.sql");
+    await copyFile(tableSqlSrc, "dist/table.sql");
+    console.log("table.sql copied successfully");
+  } catch (err) {
+    console.warn("Could not copy table.sql:", err);
+  }
 }
 
 buildAll().catch((err) => {
