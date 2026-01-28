@@ -442,6 +442,33 @@ export async function registerRoutes(
     res.json(analytics);
   });
 
+  app.get("/api/analytics/income", requireAdmin, async (req, res) => {
+    const { start, end } = req.query;
+    if (!start || !end) {
+      return res.status(400).json({ error: "Start and end dates required" });
+    }
+    const data = await storage.getDetailedIncome(start as string, end as string);
+    res.json(data);
+  });
+
+  app.get("/api/analytics/expense", requireAdmin, async (req, res) => {
+    const { start, end } = req.query;
+    if (!start || !end) {
+      return res.status(400).json({ error: "Start and end dates required" });
+    }
+    const data = await storage.getDetailedExpense(start as string, end as string);
+    res.json(data);
+  });
+
+  app.get("/api/analytics/clients", requireAdmin, async (req, res) => {
+    const { start, end } = req.query;
+    if (!start || !end) {
+      return res.status(400).json({ error: "Start and end dates required" });
+    }
+    const data = await storage.getDetailedClients(start as string, end as string);
+    res.json(data);
+  });
+
   app.get("/api/analytics/employees/:id", requireAdmin, async (req, res) => {
     try {
       const { startDate, endDate, serviceId } = req.query;

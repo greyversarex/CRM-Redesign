@@ -58,6 +58,24 @@ export interface IStorage {
     employeeStats: { id: string; fullName: string; completedServices: number; revenue: number }[];
   }>;
   
+  getDetailedIncome(startDate: string, endDate: string): Promise<{
+    byDate: Record<string, any[]>;
+    byService: Record<string, number>;
+    totalIncome: number;
+  }>;
+  
+  getDetailedExpense(startDate: string, endDate: string): Promise<{
+    byDate: Record<string, any[]>;
+    byCategory: Record<string, number>;
+    totalExpense: number;
+  }>;
+  
+  getDetailedClients(startDate: string, endDate: string): Promise<{
+    clientStats: { client: any; totalSpent: number; servicesCount: number }[];
+    totalFromClients: number;
+    uniqueClients: number;
+  }>;
+  
   getEmployeeDailyAnalytics(employeeId: string, options?: { startDate?: string; endDate?: string; serviceId?: string }): Promise<{
     employee: { id: string; fullName: string };
     dailyStats: { date: string; revenue: number; completedServices: number }[];
@@ -354,6 +372,118 @@ export class DatabaseStorage implements IStorage {
 
   async deleteExpense(id: string): Promise<void> {
     await db.delete(expenses).where(eq(expenses.id, id));
+  }
+
+  async getDetailedIncome(startDate: string, endDate: string) {
+    const monthIncomes = await db
+      .select({
+        id: incomes.id,
+        date: incomes.date,
+        name: incomes.name,
+        amount: incomes.amount,
+        recordId: incomes.recordId,
+        reminder: incomes.reminder,
+        serviceName: services.name,
+        employeeName: users.fullName,
+      })
+      .from(incomes)
+      .leftJoin(records, eq(incomes.recordId, records.id))
+      .leftJoin(services, eq(records.serviceId, services.id))
+      .leftJoin(users, eq(records.employeeId, users.id))
+      .where(and(gte(incomes.date, startDate), lte(incomes.date, endDate)));
+
+    // Group by date
+    const byDate: Record<string, typeof monthIncomes> = {};
+    for (const income of monthIncomes) {
+      if (!byDate[income.date]) {
+        byDate[income.date] = [];
+      }
+      byDate[income.date].push(income);
+    }
+
+    // Group by service for chart
+    const byService: Record<string, number> = {};
+    for (const income of monthIncomes) {
+      const serviceName = income.serviceName || income.name;
+      byService[serviceName] = (byService[serviceName] || 0) + income.amount;
+    }
+
+    const totalIncome = monthIncomes.reduce((sum, i) => sum + i.amount, 0);
+
+    return {
+      byDate,
+      byService,
+      totalIncome,
+    };
+  }
+
+  async getDetailedExpense(startDate: string, endDate: string) {
+    const monthExpenses = await db
+      .select()
+      .from(expenses)
+      .where(and(gte(expenses.date, startDate), lte(expenses.date, endDate)));
+
+    // Group by date
+    const byDate: Record<string, typeof monthExpenses> = {};
+    for (const expense of monthExpenses) {
+      if (!byDate[expense.date]) {
+        byDate[expense.date] = [];
+      }
+      byDate[expense.date].push(expense);
+    }
+
+    // Group by category/name for chart
+    const byCategory: Record<string, number> = {};
+    for (const expense of monthExpenses) {
+      byCategory[expense.name] = (byCategory[expense.name] || 0) + expense.amount;
+    }
+
+    const totalExpense = monthExpenses.reduce((sum, e) => sum + e.amount, 0);
+
+    return {
+      byDate,
+      byCategory,
+      totalExpense,
+    };
+  }
+
+  async getDetailedClients(startDate: string, endDate: string) {
+    const completedRecords = await db
+      .select()
+      .from(records)
+      .where(
+        and(
+          gte(records.date, startDate),
+          lte(records.date, endDate),
+          eq(records.status, "done")
+        )
+      )
+      .leftJoin(clients, eq(records.clientId, clients.id))
+      .leftJoin(services, eq(records.serviceId, services.id));
+
+    // Group by client
+    const clientMap = new Map<string, { client: any; totalSpent: number; servicesCount: number }>();
+    for (const row of completedRecords) {
+      if (row.clients && row.services) {
+        const existing = clientMap.get(row.clients.id) || {
+          client: row.clients,
+          totalSpent: 0,
+          servicesCount: 0,
+        };
+        existing.totalSpent += row.services.price;
+        existing.servicesCount += 1;
+        clientMap.set(row.clients.id, existing);
+      }
+    }
+
+    const clientStats = Array.from(clientMap.values()).sort((a, b) => b.totalSpent - a.totalSpent);
+    const totalFromClients = clientStats.reduce((sum, c) => sum + c.totalSpent, 0);
+
+    return {
+      clientStats,
+      totalFromClients,
+      uniqueClients: clientStats.length,
+    };
   }
 
   async getMonthlyAnalytics(startDate: string, endDate: string) {

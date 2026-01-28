@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { format, startOfMonth, endOfMonth, subMonths, addMonths } from "date-fns";
 import { ru } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, DollarSign, Users, UserCog } from "lucide-react";
@@ -22,6 +23,7 @@ interface MonthlyAnalytics {
 }
 
 export default function AnalyticsPage() {
+  const [, setLocation] = useLocation();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const monthStart = format(startOfMonth(currentMonth), "yyyy-MM-dd");
   const monthEnd = format(endOfMonth(currentMonth), "yyyy-MM-dd");
@@ -66,7 +68,11 @@ export default function AnalyticsPage() {
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-            <Card>
+            <Card 
+              className="cursor-pointer hover-elevate" 
+              onClick={() => setLocation("/analytics/income")}
+              data-testid="card-total-income"
+            >
               <CardContent className="p-4 sm:p-6">
                 <div className="flex items-center gap-3 sm:gap-4">
                   <div className="p-2 sm:p-3 bg-green-100 dark:bg-green-900/30 rounded-xl">
@@ -80,7 +86,11 @@ export default function AnalyticsPage() {
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card 
+              className="cursor-pointer hover-elevate" 
+              onClick={() => setLocation("/analytics/expense")}
+              data-testid="card-total-expense"
+            >
               <CardContent className="p-4 sm:p-6">
                 <div className="flex items-center gap-3 sm:gap-4">
                   <div className="p-2 sm:p-3 bg-red-100 dark:bg-red-900/30 rounded-xl">
@@ -94,7 +104,7 @@ export default function AnalyticsPage() {
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card data-testid="card-month-result">
               <CardContent className="p-4 sm:p-6">
                 <div className="flex items-center gap-3 sm:gap-4">
                   <div className="p-2 sm:p-3 bg-primary/10 rounded-xl">
@@ -110,7 +120,11 @@ export default function AnalyticsPage() {
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card 
+              className="cursor-pointer hover-elevate" 
+              onClick={() => setLocation("/analytics/clients")}
+              data-testid="card-clients"
+            >
               <CardContent className="p-4 sm:p-6">
                 <div className="flex items-center gap-3 sm:gap-4">
                   <div className="p-2 sm:p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">

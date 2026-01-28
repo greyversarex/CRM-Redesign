@@ -19,6 +19,9 @@ import ServicesPage from "@/pages/services";
 import EmployeesPage from "@/pages/employees";
 import EmployeeAnalyticsPage from "@/pages/employee-analytics";
 import AnalyticsPage from "@/pages/analytics";
+import AnalyticsIncomePage from "@/pages/analytics-income";
+import AnalyticsExpensePage from "@/pages/analytics-expense";
+import AnalyticsClientsPage from "@/pages/analytics-clients";
 import EmployeeDashboard from "@/pages/employee-dashboard";
 import EmployeeRecordsPage from "@/pages/employee-records";
 import NotFound from "@/pages/not-found";
@@ -36,6 +39,9 @@ function AdminRouter() {
         <Route path="/employees" component={EmployeesPage} />
         <Route path="/employees/:id/analytics" component={EmployeeAnalyticsPage} />
         <Route path="/analytics" component={AnalyticsPage} />
+        <Route path="/analytics/income" component={AnalyticsIncomePage} />
+        <Route path="/analytics/expense" component={AnalyticsExpensePage} />
+        <Route path="/analytics/clients" component={AnalyticsClientsPage} />
         <Route component={NotFound} />
       </Switch>
     </AdminLayout>
