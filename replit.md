@@ -20,6 +20,11 @@ A CRM system for managing clients, services, appointments, and finances with cal
 - Added date and service filters to employee analytics page (admin view)
 - Added API endpoint `/api/records/employee/:employeeId` for managers to view employee records
 - Fixed employee records page to properly display records for managers
+- Enhanced analytics page with clickable cards for Income, Expense, and Clients
+- Added detailed Income page (`/analytics/income`) with daily breakdown and pie chart by service
+- Added detailed Expense page (`/analytics/expense`) with daily breakdown and pie chart by category
+- Added detailed Clients page (`/analytics/clients`) showing client contributions with bar chart
+- Each detail page includes month navigation and add/delete functionality
 
 ## Test Credentials
 
