@@ -1,0 +1,49 @@
+root@6382113-xn198673:/var/www/CRM-Redesign# git pull origin main
+remote: Enumerating objects: 38, done.
+remote: Counting objects: 100% (38/38), done.
+remote: Compressing objects: 100% (4/4), done.
+remote: Total 26 (delta 22), reused 26 (delta 22), pack-reused 0 (from 0)
+Unpacking objects: 100% (26/26), 21.97 KiB | 441.00 KiB/s, done.
+From https://github.com/greyversarex/CRM-Redesign
+ * branch            main       -> FETCH_HEAD
+   b80cb32..e254fb4  main       -> origin/main
+Updating b80cb32..e254fb4
+Fast-forward
+ ...www-CRM-Redesign-git-pull-ori_1769614886630.txt |   51 +
+ ...www-CRM-Redesign-git-pull-ori_1769615704056.txt |   51 +
+ ...www-CRM-Redesign-pm2-restart-_1769617384666.txt |   69 ++
+ client/src/pages/analytics.tsx                     |  135 ++-
+ package-lock.json                                  | 1102 +++++++++++++++++++-
+ package.json                                       |    2 +
+ replit.md                                          |    5 +
+ server/reports.ts                                  |  541 ++++++++++
+ server/routes.ts                                   |   46 +
+ server/storage.ts                                  |   20 +
+ 10 files changed, 2013 insertions(+), 9 deletions(-)
+ create mode 100644 attached_assets/Pasted-root-6382113-xn198673-var-www-CRM-Redesign-git-pull-ori_1769614886630.txt
+ create mode 100644 attached_assets/Pasted-root-6382113-xn198673-var-www-CRM-Redesign-git-pull-ori_1769615704056.txt
+ create mode 100644 attached_assets/Pasted-root-6382113-xn198673-var-www-CRM-Redesign-pm2-restart-_1769617384666.txt
+ create mode 100644 server/reports.ts
+root@6382113-xn198673:/var/www/CRM-Redesign# npm run db:migrate
+npm error Missing script: "db:migrate"
+npm error
+npm error To see a list of scripts, run:
+npm error   npm run
+npm error A complete log of this run can be found in: /root/.npm/_logs/2026-01-29T20_55_45_277Z-debug-0.log
+root@6382113-xn198673:/var/www/CRM-Redesign# npm run db:push
+
+> rest-express@1.0.0 db:push
+> drizzle-kit push
+
+No config path provided, using default 'drizzle.config.ts'
+Reading config file '/var/www/CRM-Redesign/drizzle.config.ts'
+Using 'pg' driver for database querying
+[✓] Pulling schema from database...
+ Warning  Found data-loss statements:
+· You're about to delete session table with 11 items
+
+THIS ACTION WILL CAUSE DATA LOSS AND CANNOT BE REVERTED
+
+Do you still want to push changes?
+[x] All changes were aborted
+root@6382113-xn198673:/var/www/CRM-Redesign#
