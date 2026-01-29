@@ -1,0 +1,69 @@
+root@6382113-xn198673:/var/www/CRM-Redesign# pm2 restart all
+Use --update-env to update environment variables
+[PM2] Applying action restartProcessId on app [all](ids: [ 0 ])
+[PM2] [usistem](0) ✓
+┌────┬────────────────────┬──────────┬──────┬───────────┬──────────┬──────────┐
+│ id │ name               │ mode     │ ↺    │ status    │ cpu      │ memory   │
+├────┼────────────────────┼──────────┼──────┼───────────┼──────────┼──────────┤
+│ 0  │ usistem            │ fork     │ 3    │ online    │ 0%       │ 16.5mb   │
+└────┴────────────────────┴──────────┴──────┴───────────┴──────────┴──────────┘
+root@6382113-xn198673:/var/www/CRM-Redesign# sudo fallocate -l 2G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+Setting up swapspace version 1, size = 2 GiB (2147479552 bytes)
+no label, UUID=509d5644-4425-4660-b3f9-2ed1adc90422
+root@6382113-xn198673:/var/www/CRM-Redesign# pm2 logs
+[TAILING] Tailing last 15 lines for [all] processes (change the value with --lines option)
+/root/.pm2/pm2.log last 15 lines:
+PM2        | 2026-01-24T13:25:16: PM2 log: Stopping app:usistem id:0
+PM2        | 2026-01-24T13:25:16: PM2 log: App [usistem:0] exited with code [0] via signal [SIGINT]
+PM2        | 2026-01-24T13:25:16: PM2 log: pid=253933 msg=process killed
+PM2        | 2026-01-24T13:25:16: PM2 log: App [usistem:0] starting in -fork mode-
+PM2        | 2026-01-24T13:25:16: PM2 log: App [usistem:0] online
+PM2        | 2026-01-24T13:30:39: PM2 log: Stopping app:usistem id:0
+PM2        | 2026-01-24T13:30:39: PM2 log: App [usistem:0] exited with code [0] via signal [SIGINT]
+PM2        | 2026-01-24T13:30:39: PM2 log: pid=441514 msg=process killed
+PM2        | 2026-01-24T13:30:39: PM2 log: App [usistem:0] starting in -fork mode-
+PM2        | 2026-01-24T13:30:39: PM2 log: App [usistem:0] online
+PM2        | 2026-01-28T16:05:31: PM2 log: Stopping app:usistem id:0
+PM2        | 2026-01-28T16:05:31: PM2 log: App [usistem:0] exited with code [0] via signal [SIGINT]
+PM2        | 2026-01-28T16:05:31: PM2 log: pid=441812 msg=process killed
+PM2        | 2026-01-28T16:05:31: PM2 log: App [usistem:0] starting in -fork mode-
+PM2        | 2026-01-28T16:05:31: PM2 log: App [usistem:0] online
+
+/root/.pm2/logs/usistem-out.log last 15 lines:
+0|usistem  | 9:02:55 AM [express] POST /api 200 in 1ms
+0|usistem  | 9:02:55 AM [express] POST /api 200 in 1ms
+0|usistem  | 9:02:56 AM [express] POST /api 200 in 1ms
+0|usistem  | 9:02:56 AM [express] POST /api 200 in 1ms
+0|usistem  | 9:33:31 AM [express] POST /api 200 in 1ms
+0|usistem  | 10:07:06 AM [express] POST /api 200 in 1ms
+0|usistem  | 10:12:06 AM [express] GET /api/auth/me 401 in 1ms :: {"error":"Unauthorized"}
+0|usistem  | 10:25:46 AM [express] POST /api 200 in 1ms
+0|usistem  | 10:27:56 AM [express] POST /api 200 in 1ms
+0|usistem  | 10:32:21 AM [express] POST /api 200 in 1ms
+0|usistem  | 12:02:24 PM [express] POST /api 200 in 1ms
+0|usistem  | 12:41:16 PM [express] POST /api 200 in 1ms
+0|usistem  | 1:14:28 PM [express] POST /api 200 in 1ms
+0|usistem  | 1:40:11 PM [express] POST /api 200 in 1ms
+0|usistem  | 2:30:32 PM [express] POST /api 200 in 1ms
+
+/root/.pm2/logs/usistem-error.log last 15 lines:
+0|usistem  |     at async Timeout._onTimeout (/var/www/CRM-Redesign/dist/index.cjs:84:9497)
+0|usistem  | Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/var/www/CRM-Redesign/dist/index.cjs' imported from /usr/lib/node_modules/pm2/lib/ProcessContainerFork.js
+0|usistem  |     at finalizeResolution (node:internal/modules/esm/resolve:275:11)
+0|usistem  |     at moduleResolve (node:internal/modules/esm/resolve:932:10)
+0|usistem  |     at defaultResolve (node:internal/modules/esm/resolve:1056:11)
+0|usistem  |     at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:654:12)
+0|usistem  |     at #cachedDefaultResolve (node:internal/modules/esm/loader:603:25)
+0|usistem  |     at ModuleLoader.resolve (node:internal/modules/esm/loader:586:38)
+0|usistem  |     at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:242:38)
+0|usistem  |     at onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:546:36)
+0|usistem  |     at TracingChannel.tracePromise (node:diagnostics_channel:344:14)
+0|usistem  |     at ModuleLoader.import (node:internal/modules/esm/loader:545:21) {
+0|usistem  |   code: 'ERR_MODULE_NOT_FOUND',
+0|usistem  |   url: 'file:///var/www/CRM-Redesign/dist/index.cjs'
+0|usistem  | }
+
+^C

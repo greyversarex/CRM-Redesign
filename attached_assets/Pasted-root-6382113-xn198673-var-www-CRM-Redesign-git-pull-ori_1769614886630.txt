@@ -1,0 +1,51 @@
+root@6382113-xn198673:/var/www/CRM-Redesign# git pull origin main
+remote: Enumerating objects: 37, done.
+remote: Counting objects: 100% (37/37), done.
+remote: Compressing objects: 100% (3/3), done.
+remote: Total 23 (delta 20), reused 23 (delta 20), pack-reused 0 (from 0)
+Unpacking objects: 100% (23/23), 453.85 KiB | 1.99 MiB/s, done.
+From https://github.com/greyversarex/CRM-Redesign
+ * branch            main       -> FETCH_HEAD
+   16e2060..b80cb32  main       -> origin/main
+Updating 16e2060..b80cb32
+Fast-forward
+ .replit                                 |   2 +-
+ attached_assets/image_1769611970526.png | Bin 0 -> 477226 bytes
+ client/src/App.tsx                      |   6 +
+ client/src/pages/analytics-clients.tsx  | 196 +++++++++++++++++++++
+ client/src/pages/analytics-expense.tsx  | 292 ++++++++++++++++++++++++++++++
+ client/src/pages/analytics-income.tsx   | 302 ++++++++++++++++++++++++++++++++
+ client/src/pages/analytics.tsx          |  22 ++-
+ package-lock.json                       |   9 +-
+ package.json                            |   2 +-
+ replit.md                               |   5 +
+ server/routes.ts                        |  27 +++
+ server/storage.ts                       | 130 ++++++++++++++
+ 12 files changed, 983 insertions(+), 10 deletions(-)
+ create mode 100644 attached_assets/image_1769611970526.png
+ create mode 100644 client/src/pages/analytics-clients.tsx
+ create mode 100644 client/src/pages/analytics-expense.tsx
+ create mode 100644 client/src/pages/analytics-income.tsx
+root@6382113-xn198673:/var/www/CRM-Redesign# npm install
+
+changed 1 package, and audited 496 packages in 4s
+
+68 packages are looking for funding
+  run `npm fund` for details
+
+4 vulnerabilities (1 moderate, 3 high)
+
+To address all issues, run:
+  npm audit fix
+
+Run `npm audit` for details.
+root@6382113-xn198673:/var/www/CRM-Redesign# npm run build
+
+> rest-express@1.0.0 build
+> tsx script/build.ts
+
+building client...
+vite v7.3.0 building client environment for production...
+transforming (5) src/App.tsx
+A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+transforming (3178) ../node_modules/lodash/noop.js
