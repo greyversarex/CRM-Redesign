@@ -1,13 +1,17 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { format, startOfMonth, endOfMonth, subMonths, addMonths } from "date-fns";
+import { format, startOfMonth, endOfMonth, subMonths, addMonths, startOfYear, endOfYear, startOfDay, endOfDay } from "date-fns";
 import { ru } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, DollarSign, Users, UserCog } from "lucide-react";
+import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, DollarSign, Users, UserCog, Download, FileSpreadsheet, FileText, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 
 interface MonthlyAnalytics {
   totalIncome: number;
@@ -25,6 +29,12 @@ interface MonthlyAnalytics {
 export default function AnalyticsPage() {
   const [, setLocation] = useLocation();
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
+  const [exportPeriod, setExportPeriod] = useState<"day" | "month" | "year">("month");
+  const [exportFormat, setExportFormat] = useState<"excel" | "word">("excel");
+  const [isExporting, setIsExporting] = useState(false);
+  const { toast } = useToast();
+  
   const monthStart = format(startOfMonth(currentMonth), "yyyy-MM-dd");
   const monthEnd = format(endOfMonth(currentMonth), "yyyy-MM-dd");
 
@@ -32,11 +42,130 @@ export default function AnalyticsPage() {
     queryKey: ["/api/analytics/month", { start: monthStart, end: monthEnd }],
   });
 
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      let start: string, end: string;
+      
+      if (exportPeriod === "day") {
+        const dayStr = format(currentMonth, "yyyy-MM-dd");
+        start = dayStr;
+        end = dayStr;
+      } else if (exportPeriod === "month") {
+        start = format(startOfMonth(currentMonth), "yyyy-MM-dd");
+        end = format(endOfMonth(currentMonth), "yyyy-MM-dd");
+      } else {
+        start = format(startOfYear(currentMonth), "yyyy-MM-dd");
+        end = format(endOfYear(currentMonth), "yyyy-MM-dd");
+      }
+
+      const endpoint = exportFormat === "excel" ? "/api/reports/excel" : "/api/reports/word";
+      const response = await fetch(`${endpoint}?start=${start}&end=${end}&period=${exportPeriod}`, {
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to download report");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = exportFormat === "excel" 
+        ? `report_${start}_${end}.xlsx` 
+        : `report_${start}_${end}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      toast({ title: "Отчёт скачан" });
+      setIsExportDialogOpen(false);
+    } catch (error) {
+      toast({ title: "Ошибка", description: "Не удалось скачать отчёт", variant: "destructive" });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <h1 className="text-2xl sm:text-3xl font-bold" data-testid="text-analytics-title">Аналитика</h1>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Dialog open={isExportDialogOpen} onOpenChange={setIsExportDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" data-testid="button-export-report">
+                <Download className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Скачать отчёт</span>
+                <span className="sm:hidden">Скачать</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Скачать отчёт</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label>Период</Label>
+                  <Select value={exportPeriod} onValueChange={(v) => setExportPeriod(v as any)}>
+                    <SelectTrigger data-testid="select-export-period">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="day">Текущий день ({format(currentMonth, "d MMMM yyyy", { locale: ru })})</SelectItem>
+                      <SelectItem value="month">Текущий месяц ({format(currentMonth, "LLLL yyyy", { locale: ru })})</SelectItem>
+                      <SelectItem value="year">Текущий год ({format(currentMonth, "yyyy")})</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Формат</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button
+                      type="button"
+                      variant={exportFormat === "excel" ? "default" : "outline"}
+                      className="flex items-center gap-2"
+                      onClick={() => setExportFormat("excel")}
+                      data-testid="button-format-excel"
+                    >
+                      <FileSpreadsheet className="h-4 w-4" />
+                      Excel
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={exportFormat === "word" ? "default" : "outline"}
+                      className="flex items-center gap-2"
+                      onClick={() => setExportFormat("word")}
+                      data-testid="button-format-word"
+                    >
+                      <FileText className="h-4 w-4" />
+                      Word
+                    </Button>
+                  </div>
+                </div>
+                <Button 
+                  className="w-full" 
+                  onClick={handleExport}
+                  disabled={isExporting}
+                  data-testid="button-download-report"
+                >
+                  {isExporting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Формирование...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="h-4 w-4 mr-2" />
+                      Скачать
+                    </>
+                  )}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
           <Button
             variant="outline"
             size="icon"

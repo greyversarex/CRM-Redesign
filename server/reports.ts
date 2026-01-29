@@ -38,9 +38,12 @@ async function getReportData(
   endDate: string,
   periodType: "day" | "month" | "year"
 ): Promise<ReportData> {
-  const analytics = await storage.getMonthlyAnalytics(startDate, endDate);
-  const incomeData = await storage.getDetailedIncome(startDate, endDate);
-  const expenseData = await storage.getDetailedExpense(startDate, endDate);
+  const [analytics, incomeData, expenseData, records] = await Promise.all([
+    storage.getMonthlyAnalytics(startDate, endDate),
+    storage.getDetailedIncome(startDate, endDate),
+    storage.getDetailedExpense(startDate, endDate),
+    storage.getRecordsByDateRange(startDate, endDate),
+  ]);
 
   const allIncomes: any[] = [];
   Object.entries(incomeData.byDate).forEach(([date, items]) => {
@@ -55,17 +58,6 @@ async function getReportData(
       allExpenses.push({ ...item, date });
     });
   });
-
-  const records: any[] = [];
-  const start = parseISO(startDate);
-  const end = parseISO(endDate);
-  let current = start;
-  while (current <= end) {
-    const dateStr = format(current, "yyyy-MM-dd");
-    const dayRecords = await storage.getRecordsByDate(dateStr);
-    records.push(...dayRecords);
-    current = new Date(current.getTime() + 24 * 60 * 60 * 1000);
-  }
 
   return {
     records,

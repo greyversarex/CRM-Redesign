@@ -34,6 +34,7 @@ export interface IStorage {
   
   getRecord(id: string): Promise<RecordWithRelations | undefined>;
   getRecordsByDate(date: string): Promise<RecordWithRelations[]>;
+  getRecordsByDateRange(startDate: string, endDate: string): Promise<RecordWithRelations[]>;
   getRecordsByClientId(clientId: string): Promise<RecordWithRelations[]>;
   getRecordsByEmployeeId(employeeId: string, date?: string): Promise<RecordWithRelations[]>;
   getRecordCountsByMonth(year: number, month: number): Promise<Record<string, number>>;
@@ -218,6 +219,25 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(records)
       .where(eq(records.date, date))
+      .leftJoin(clients, eq(records.clientId, clients.id))
+      .leftJoin(services, eq(records.serviceId, services.id))
+      .leftJoin(users, eq(records.employeeId, users.id));
+    
+    return result
+      .filter((r) => r.clients && r.services && r.users)
+      .map((r) => ({
+        ...r.records,
+        client: r.clients!,
+        service: r.services!,
+        employee: r.users!,
+      }));
+  }
+
+  async getRecordsByDateRange(startDate: string, endDate: string): Promise<RecordWithRelations[]> {
+    const result = await db
+      .select()
+      .from(records)
+      .where(and(gte(records.date, startDate), lte(records.date, endDate)))
       .leftJoin(clients, eq(records.clientId, clients.id))
       .leftJoin(services, eq(records.serviceId, services.id))
       .leftJoin(users, eq(records.employeeId, users.id));

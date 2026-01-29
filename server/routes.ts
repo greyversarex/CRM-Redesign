@@ -486,14 +486,20 @@ export async function registerRoutes(
   });
 
   // Report export endpoints
+  const reportQuerySchema = z.object({
+    start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format"),
+    end: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format"),
+    period: z.enum(["day", "month", "year"]).optional().default("month"),
+  });
+
   app.get("/api/reports/excel", requireAdmin, async (req, res) => {
     try {
-      const { start, end, period } = req.query;
-      if (!start || !end) {
-        return res.status(400).json({ error: "Start and end dates required" });
+      const parsed = reportQuerySchema.safeParse(req.query);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid parameters", details: parsed.error.errors });
       }
-      const periodType = (period as "day" | "month" | "year") || "month";
-      const buffer = await generateExcelReport(start as string, end as string, periodType);
+      const { start, end, period } = parsed.data;
+      const buffer = await generateExcelReport(start, end, period);
       
       const filename = `report_${start}_${end}.xlsx`;
       res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
@@ -507,12 +513,12 @@ export async function registerRoutes(
 
   app.get("/api/reports/word", requireAdmin, async (req, res) => {
     try {
-      const { start, end, period } = req.query;
-      if (!start || !end) {
-        return res.status(400).json({ error: "Start and end dates required" });
+      const parsed = reportQuerySchema.safeParse(req.query);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid parameters", details: parsed.error.errors });
       }
-      const periodType = (period as "day" | "month" | "year") || "month";
-      const buffer = await generateWordReport(start as string, end as string, periodType);
+      const { start, end, period } = parsed.data;
+      const buffer = await generateWordReport(start, end, period);
       
       const filename = `report_${start}_${end}.docx`;
       res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
