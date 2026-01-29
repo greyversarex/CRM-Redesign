@@ -1,0 +1,70 @@
+root@msk-1-vm-soga:~# cd /var/www/ecomap
+root@msk-1-vm-soga:/var/www/ecomap# git pull origin main
+remote: Enumerating objects: 18, done.
+remote: Counting objects: 100% (18/18), done.
+remote: Compressing objects: 100% (6/6), done.
+remote: Total 18 (delta 12), reused 18 (delta 12), pack-reused 0 (from 0)
+Unpacking objects: 100% (18/18), 32.74 KiB | 577.00 KiB/s, done.
+From https://github.com/greyversarex/Map
+ * branch            main       -> FETCH_HEAD
+   1683540..ce81256  main       -> origin/main
+Updating 1683540..ce81256
+Fast-forward
+ .replit                                            |   8 +-
+ ...ot-195-133-25-78-s-password-W_1769084259629.txt | 147 +++++++++++++++++++
+ ...-ecomap-cd-var-www-ecomap-git_1769084417655.txt | 162 +++++++++++++++++++++
+ attached_assets/image_1769084274287.png            | Bin 0 -> 28069 bytes
+ client/src/pages/map.tsx                           |  25 +++-
+ 5 files changed, 337 insertions(+), 5 deletions(-)
+ create mode 100644 attached_assets/Pasted--ssh-root-195-133-25-78-root-195-133-25-78-s-password-W_1769084259629.txt
+ create mode 100644 attached_assets/Pasted-root-msk-1-vm-soga-var-www-ecomap-cd-var-www-ecomap-git_1769084417655.txt
+ create mode 100644 attached_assets/image_1769084274287.png
+root@msk-1-vm-soga:/var/www/ecomap# npm install
+
+up to date, audited 677 packages in 5s
+
+92 packages are looking for funding
+  run `npm fund` for details
+
+4 vulnerabilities (1 moderate, 3 high)
+
+To address all issues, run:
+  npm audit fix
+
+Run `npm audit` for details.
+npm notice
+npm notice New minor version of npm available! 11.7.0 -> 11.8.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.8.0
+npm notice To update run: npm install -g npm@11.8.0
+npm notice
+root@msk-1-vm-soga:/var/www/ecomap# npm install -g npm@11.8.0
+
+removed 4 packages, and changed 30 packages in 4s
+
+15 packages are looking for funding
+  run `npm fund` for details
+root@msk-1-vm-soga:/var/www/ecomap# npm install
+
+up to date, audited 677 packages in 2s
+
+92 packages are looking for funding
+  run `npm fund` for details
+
+4 vulnerabilities (1 moderate, 3 high)
+
+To address all issues, run:
+  npm audit fix
+
+Run `npm audit` for details.
+root@msk-1-vm-soga:/var/www/ecomap# npm run build
+
+> rest-express@1.0.0 build
+> tsx script/build.ts
+
+=== Starting build process ===
+Step 1: Cleaning dist folder...
+✓ dist folder cleaned
+Step 2: Building client with Vite...
+vite v7.3.0 building client environment for production...
+✓ 2223 modules transformed.
+root@msk-1-vm-soga:/var/www/ecomap#
