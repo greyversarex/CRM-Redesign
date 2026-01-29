@@ -9,6 +9,7 @@ import { z } from "zod";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { getVapidPublicKey } from "./push";
+import { generateExcelReport, generateWordReport } from "./reports";
 
 const PgStore = connectPgSimple(session);
 
@@ -481,6 +482,45 @@ export async function registerRoutes(
       res.json(analytics);
     } catch (error) {
       res.status(404).json({ error: "Employee not found" });
+    }
+  });
+
+  // Report export endpoints
+  app.get("/api/reports/excel", requireAdmin, async (req, res) => {
+    try {
+      const { start, end, period } = req.query;
+      if (!start || !end) {
+        return res.status(400).json({ error: "Start and end dates required" });
+      }
+      const periodType = (period as "day" | "month" | "year") || "month";
+      const buffer = await generateExcelReport(start as string, end as string, periodType);
+      
+      const filename = `report_${start}_${end}.xlsx`;
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+      res.send(buffer);
+    } catch (error) {
+      console.error("Excel report error:", error);
+      res.status(500).json({ error: "Failed to generate Excel report" });
+    }
+  });
+
+  app.get("/api/reports/word", requireAdmin, async (req, res) => {
+    try {
+      const { start, end, period } = req.query;
+      if (!start || !end) {
+        return res.status(400).json({ error: "Start and end dates required" });
+      }
+      const periodType = (period as "day" | "month" | "year") || "month";
+      const buffer = await generateWordReport(start as string, end as string, periodType);
+      
+      const filename = `report_${start}_${end}.docx`;
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+      res.send(buffer);
+    } catch (error) {
+      console.error("Word report error:", error);
+      res.status(500).json({ error: "Failed to generate Word report" });
     }
   });
 
