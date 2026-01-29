@@ -16,6 +16,8 @@ import { storage } from "./storage";
 import { format, parseISO } from "date-fns";
 import { ru } from "date-fns/locale";
 
+const CURRENCY = "с.";
+
 interface ReportData {
   records: any[];
   incomes: any[];
@@ -31,6 +33,11 @@ interface ReportData {
     end: string;
     type: "day" | "month" | "year";
   };
+  dailyIncome: Record<string, { total: number; items: any[] }>;
+  dailyExpense: Record<string, { total: number; items: any[] }>;
+  clientStats: { clientId: number; name: string; phone: string; total: number; count: number }[];
+  serviceStats: { serviceId: number; name: string; total: number; count: number }[];
+  employeeStats: { employeeId: number; name: string; total: number; count: number; services: Record<string, { total: number; count: number }> }[];
 }
 
 async function getReportData(
@@ -46,18 +53,99 @@ async function getReportData(
   ]);
 
   const allIncomes: any[] = [];
+  const dailyIncome: Record<string, { total: number; items: any[] }> = {};
   Object.entries(incomeData.byDate).forEach(([date, items]) => {
+    dailyIncome[date] = { total: 0, items: [] };
     items.forEach((item: any) => {
       allIncomes.push({ ...item, date });
+      dailyIncome[date].items.push(item);
+      dailyIncome[date].total += item.amount;
     });
   });
 
   const allExpenses: any[] = [];
+  const dailyExpense: Record<string, { total: number; items: any[] }> = {};
   Object.entries(expenseData.byDate).forEach(([date, items]) => {
+    dailyExpense[date] = { total: 0, items: [] };
     items.forEach((item: any) => {
       allExpenses.push({ ...item, date });
+      dailyExpense[date].items.push(item);
+      dailyExpense[date].total += item.amount;
     });
   });
+
+  const clientMap = new Map<number, { name: string; phone: string; total: number; count: number }>();
+  const serviceMap = new Map<number, { name: string; total: number; count: number }>();
+  const employeeMap = new Map<number, { name: string; total: number; count: number; services: Record<string, { total: number; count: number }> }>();
+
+  records.forEach((record: any) => {
+    if (record.status === "done" && record.service?.price) {
+      const price = record.service.price;
+      
+      if (record.clientId && record.client) {
+        const existing = clientMap.get(record.clientId);
+        if (existing) {
+          existing.total += price;
+          existing.count += 1;
+        } else {
+          clientMap.set(record.clientId, {
+            name: record.client.fullName,
+            phone: record.client.phone || "",
+            total: price,
+            count: 1,
+          });
+        }
+      }
+
+      if (record.serviceId && record.service) {
+        const existing = serviceMap.get(record.serviceId);
+        if (existing) {
+          existing.total += price;
+          existing.count += 1;
+        } else {
+          serviceMap.set(record.serviceId, {
+            name: record.service.name,
+            total: price,
+            count: 1,
+          });
+        }
+      }
+
+      if (record.employeeId && record.employee) {
+        const existing = employeeMap.get(record.employeeId);
+        const serviceName = record.service?.name || "Неизвестно";
+        if (existing) {
+          existing.total += price;
+          existing.count += 1;
+          if (existing.services[serviceName]) {
+            existing.services[serviceName].total += price;
+            existing.services[serviceName].count += 1;
+          } else {
+            existing.services[serviceName] = { total: price, count: 1 };
+          }
+        } else {
+          employeeMap.set(record.employeeId, {
+            name: record.employee.fullName,
+            total: price,
+            count: 1,
+            services: { [serviceName]: { total: price, count: 1 } },
+          });
+        }
+      }
+    }
+  });
+
+  const clientStats = Array.from(clientMap.entries())
+    .map(([clientId, data]) => ({ clientId, ...data }))
+    .sort((a, b) => b.total - a.total);
+
+  const serviceStats = Array.from(serviceMap.entries())
+    .map(([serviceId, data]) => ({ serviceId, ...data }))
+    .sort((a, b) => b.total - a.total);
+
+  const employeeStats = Array.from(employeeMap.entries())
+    .map(([employeeId, data]) => ({ employeeId, ...data }))
+    .sort((a, b) => b.total - a.total);
 
   return {
     records,
@@ -74,6 +162,11 @@ async function getReportData(
       end: endDate,
       type: periodType,
     },
+    dailyIncome,
+    dailyExpense,
+    clientStats,
+    serviceStats,
+    employeeStats,
   };
 }
 
@@ -86,6 +179,10 @@ function formatPeriodTitle(data: ReportData): string {
   } else {
     return format(start, "yyyy") + " год";
   }
+}
+
+function formatMoney(amount: number): string {
+  return `${amount.toLocaleString("ru-RU")} ${CURRENCY}`;
 }
 
 export async function generateExcelReport(
@@ -102,6 +199,17 @@ export async function generateExcelReport(
     font: { bold: true, size: 12, color: { argb: "FFFFFFFF" } },
     fill: { type: "pattern", pattern: "solid", fgColor: { argb: "FF4472C4" } },
     alignment: { horizontal: "center", vertical: "middle" },
+    border: {
+      top: { style: "thin" },
+      left: { style: "thin" },
+      bottom: { style: "thin" },
+      right: { style: "thin" },
+    },
+  };
+
+  const subHeaderStyle: Partial<ExcelJS.Style> = {
+    font: { bold: true, size: 11 },
+    fill: { type: "pattern", pattern: "solid", fgColor: { argb: "FFD9E2F3" } },
     border: {
       top: { style: "thin" },
       left: { style: "thin" },
@@ -132,9 +240,9 @@ export async function generateExcelReport(
 
   const periodTitle = formatPeriodTitle(data);
   summarySheet.addRow({ metric: "Период", value: periodTitle });
-  summarySheet.addRow({ metric: "Общий доход", value: `${data.analytics.totalIncome.toLocaleString("ru-RU")} ₽` });
-  summarySheet.addRow({ metric: "Общий расход", value: `${data.analytics.totalExpense.toLocaleString("ru-RU")} ₽` });
-  summarySheet.addRow({ metric: "Итог", value: `${data.analytics.result.toLocaleString("ru-RU")} ₽` });
+  summarySheet.addRow({ metric: "Общий доход", value: formatMoney(data.analytics.totalIncome) });
+  summarySheet.addRow({ metric: "Общий расход", value: formatMoney(data.analytics.totalExpense) });
+  summarySheet.addRow({ metric: "Итог", value: formatMoney(data.analytics.result) });
   summarySheet.addRow({ metric: "Уникальных клиентов", value: data.analytics.uniqueClients });
   summarySheet.addRow({ metric: "Всего записей", value: data.records.length });
 
@@ -177,7 +285,7 @@ export async function generateExcelReport(
         client: record.client?.fullName || "-",
         phone: record.client?.phone || "-",
         service: record.service?.name || "-",
-        price: record.service?.price ? `${record.service.price.toLocaleString("ru-RU")} ₽` : "-",
+        price: record.service?.price ? formatMoney(record.service.price) : "-",
         employee: record.employee?.fullName || "-",
         status: statusMap[record.status] || record.status,
       });
@@ -192,37 +300,133 @@ export async function generateExcelReport(
     });
   }
 
-  if (data.incomes.length > 0) {
-    const incomesSheet = workbook.addWorksheet("Доходы");
-    incomesSheet.columns = [
-      { header: "Дата", key: "date", width: 12 },
-      { header: "Название", key: "name", width: 35 },
-      { header: "Сумма", key: "amount", width: 15 },
-      { header: "Источник", key: "source", width: 20 },
+  const incomesSheet = workbook.addWorksheet("Доходы по дням");
+  incomesSheet.columns = [
+    { header: "Дата", key: "date", width: 12 },
+    { header: "Название", key: "name", width: 35 },
+    { header: "Сумма", key: "amount", width: 15 },
+    { header: "Источник", key: "source", width: 20 },
+  ];
+
+  incomesSheet.getRow(1).eachCell((cell) => {
+    Object.assign(cell, headerStyle);
+  });
+
+  const sortedDates = Object.keys(data.dailyIncome).sort();
+  sortedDates.forEach((date) => {
+    const dayData = data.dailyIncome[date];
+    const dateRow = incomesSheet.addRow({
+      date: format(parseISO(date), "dd.MM.yyyy"),
+      name: `День: ${format(parseISO(date), "EEEE", { locale: ru })}`,
+      amount: formatMoney(dayData.total),
+      source: "",
+    });
+    dateRow.eachCell((cell) => {
+      Object.assign(cell, subHeaderStyle);
+    });
+
+    dayData.items.forEach((item) => {
+      incomesSheet.addRow({
+        date: "",
+        name: item.name,
+        amount: formatMoney(item.amount),
+        source: item.recordId ? "Из записи" : "Вручную",
+      });
+    });
+  });
+
+  const totalIncomeRow = incomesSheet.addRow({
+    date: "",
+    name: "ИТОГО",
+    amount: formatMoney(data.analytics.totalIncome),
+    source: "",
+  });
+  totalIncomeRow.font = { bold: true };
+
+  incomesSheet.eachRow((row, rowNumber) => {
+    if (rowNumber > 1) {
+      row.eachCell((cell) => {
+        if (!cell.style.fill) {
+          Object.assign(cell, cellStyle);
+        }
+      });
+    }
+  });
+
+  const expensesSheet = workbook.addWorksheet("Расходы по дням");
+  expensesSheet.columns = [
+    { header: "Дата", key: "date", width: 12 },
+    { header: "Название", key: "name", width: 35 },
+    { header: "Сумма", key: "amount", width: 15 },
+  ];
+
+  expensesSheet.getRow(1).eachCell((cell) => {
+    Object.assign(cell, headerStyle);
+  });
+
+  const sortedExpenseDates = Object.keys(data.dailyExpense).sort();
+  sortedExpenseDates.forEach((date) => {
+    const dayData = data.dailyExpense[date];
+    const dateRow = expensesSheet.addRow({
+      date: format(parseISO(date), "dd.MM.yyyy"),
+      name: `День: ${format(parseISO(date), "EEEE", { locale: ru })}`,
+      amount: formatMoney(dayData.total),
+    });
+    dateRow.eachCell((cell) => {
+      Object.assign(cell, subHeaderStyle);
+    });
+
+    dayData.items.forEach((item) => {
+      expensesSheet.addRow({
+        date: "",
+        name: item.name,
+        amount: formatMoney(item.amount),
+      });
+    });
+  });
+
+  const totalExpenseRow = expensesSheet.addRow({
+    date: "",
+    name: "ИТОГО",
+    amount: formatMoney(data.analytics.totalExpense),
+  });
+  totalExpenseRow.font = { bold: true };
+
+  expensesSheet.eachRow((row, rowNumber) => {
+    if (rowNumber > 1) {
+      row.eachCell((cell) => {
+        if (!cell.style.fill) {
+          Object.assign(cell, cellStyle);
+        }
+      });
+    }
+  });
+
+  if (data.clientStats.length > 0) {
+    const clientsSheet = workbook.addWorksheet("Клиенты");
+    clientsSheet.columns = [
+      { header: "#", key: "rank", width: 5 },
+      { header: "Клиент", key: "name", width: 25 },
+      { header: "Телефон", key: "phone", width: 15 },
+      { header: "Записей", key: "count", width: 10 },
+      { header: "Сумма", key: "total", width: 15 },
     ];
 
-    incomesSheet.getRow(1).eachCell((cell) => {
+    clientsSheet.getRow(1).eachCell((cell) => {
       Object.assign(cell, headerStyle);
     });
 
-    data.incomes.forEach((income) => {
-      incomesSheet.addRow({
-        date: format(parseISO(income.date), "dd.MM.yyyy"),
-        name: income.name,
-        amount: `${income.amount.toLocaleString("ru-RU")} ₽`,
-        source: income.recordId ? "Из записи" : "Вручную",
+    data.clientStats.forEach((client, index) => {
+      clientsSheet.addRow({
+        rank: index + 1,
+        name: client.name,
+        phone: client.phone || "-",
+        count: client.count,
+        total: formatMoney(client.total),
       });
     });
 
-    const totalRow = incomesSheet.addRow({
-      date: "",
-      name: "ИТОГО",
-      amount: `${data.analytics.totalIncome.toLocaleString("ru-RU")} ₽`,
-      source: "",
-    });
-    totalRow.font = { bold: true };
-
-    incomesSheet.eachRow((row, rowNumber) => {
+    clientsSheet.eachRow((row, rowNumber) => {
       if (rowNumber > 1) {
         row.eachCell((cell) => {
           Object.assign(cell, cellStyle);
@@ -231,34 +435,66 @@ export async function generateExcelReport(
     });
   }
 
-  if (data.expenses.length > 0) {
-    const expensesSheet = workbook.addWorksheet("Расходы");
-    expensesSheet.columns = [
-      { header: "Дата", key: "date", width: 12 },
-      { header: "Название", key: "name", width: 35 },
-      { header: "Сумма", key: "amount", width: 15 },
+  if (data.serviceStats.length > 0) {
+    const servicesSheet = workbook.addWorksheet("ТОП услуг");
+    servicesSheet.columns = [
+      { header: "#", key: "rank", width: 5 },
+      { header: "Услуга", key: "name", width: 35 },
+      { header: "Кол-во", key: "count", width: 10 },
+      { header: "Сумма", key: "total", width: 15 },
     ];
 
-    expensesSheet.getRow(1).eachCell((cell) => {
+    servicesSheet.getRow(1).eachCell((cell) => {
       Object.assign(cell, headerStyle);
     });
 
-    data.expenses.forEach((expense) => {
-      expensesSheet.addRow({
-        date: format(parseISO(expense.date), "dd.MM.yyyy"),
-        name: expense.name,
-        amount: `${expense.amount.toLocaleString("ru-RU")} ₽`,
+    data.serviceStats.forEach((service, index) => {
+      servicesSheet.addRow({
+        rank: index + 1,
+        name: service.name,
+        count: service.count,
+        total: formatMoney(service.total),
       });
     });
 
-    const totalRow = expensesSheet.addRow({
-      date: "",
-      name: "ИТОГО",
-      amount: `${data.analytics.totalExpense.toLocaleString("ru-RU")} ₽`,
+    servicesSheet.eachRow((row, rowNumber) => {
+      if (rowNumber > 1) {
+        row.eachCell((cell) => {
+          Object.assign(cell, cellStyle);
+        });
+      }
     });
-    totalRow.font = { bold: true };
+  }
 
-    expensesSheet.eachRow((row, rowNumber) => {
+  if (data.employeeStats.length > 0) {
+    const employeesSheet = workbook.addWorksheet("ТОП сотрудников");
+    employeesSheet.columns = [
+      { header: "#", key: "rank", width: 5 },
+      { header: "Сотрудник", key: "name", width: 25 },
+      { header: "Записей", key: "count", width: 10 },
+      { header: "Сумма", key: "total", width: 15 },
+      { header: "Услуги (подробно)", key: "services", width: 50 },
+    ];
+
+    employeesSheet.getRow(1).eachCell((cell) => {
+      Object.assign(cell, headerStyle);
+    });
+
+    data.employeeStats.forEach((employee, index) => {
+      const servicesDetail = Object.entries(employee.services)
+        .map(([name, stats]) => `${name}: ${stats.count} шт. (${formatMoney(stats.total)})`)
+        .join("; ");
+
+      employeesSheet.addRow({
+        rank: index + 1,
+        name: employee.name,
+        count: employee.count,
+        total: formatMoney(employee.total),
+        services: servicesDetail,
+      });
+    });
+
+    employeesSheet.eachRow((row, rowNumber) => {
       if (rowNumber > 1) {
         row.eachCell((cell) => {
           Object.assign(cell, cellStyle);
@@ -327,7 +563,7 @@ export async function generateWordReport(
           }),
           new TableCell({
             width: { size: 50, type: WidthType.PERCENTAGE },
-            children: [new Paragraph({ text: `${data.analytics.totalIncome.toLocaleString("ru-RU")} ₽`, alignment: AlignmentType.RIGHT })],
+            children: [new Paragraph({ text: formatMoney(data.analytics.totalIncome), alignment: AlignmentType.RIGHT })],
           }),
         ],
       }),
@@ -337,7 +573,7 @@ export async function generateWordReport(
             children: [new Paragraph({ text: "Общий расход", alignment: AlignmentType.LEFT })],
           }),
           new TableCell({
-            children: [new Paragraph({ text: `${data.analytics.totalExpense.toLocaleString("ru-RU")} ₽`, alignment: AlignmentType.RIGHT })],
+            children: [new Paragraph({ text: formatMoney(data.analytics.totalExpense), alignment: AlignmentType.RIGHT })],
           }),
         ],
       }),
@@ -349,7 +585,7 @@ export async function generateWordReport(
           new TableCell({
             children: [
               new Paragraph({
-                children: [new TextRun({ text: `${data.analytics.result.toLocaleString("ru-RU")} ₽`, bold: true })],
+                children: [new TextRun({ text: formatMoney(data.analytics.result), bold: true })],
                 alignment: AlignmentType.RIGHT,
               }),
             ],
@@ -414,7 +650,7 @@ export async function generateWordReport(
             new TableCell({ children: [new Paragraph({ text: format(parseISO(record.date), "dd.MM.yyyy") })] }),
             new TableCell({ children: [new Paragraph({ text: record.client?.fullName || "-" })] }),
             new TableCell({ children: [new Paragraph({ text: record.service?.name || "-" })] }),
-            new TableCell({ children: [new Paragraph({ text: record.service?.price ? `${record.service.price.toLocaleString("ru-RU")} ₽` : "-" })] }),
+            new TableCell({ children: [new Paragraph({ text: record.service?.price ? formatMoney(record.service.price) : "-" })] }),
             new TableCell({ children: [new Paragraph({ text: statusMap[record.status] || record.status })] }),
           ],
         })
@@ -429,94 +665,267 @@ export async function generateWordReport(
     sections.push(recordsTable);
   }
 
-  if (data.incomes.length > 0) {
-    sections.push(
-      new Paragraph({
-        text: "Доходы",
-        heading: HeadingLevel.HEADING_2,
-        spacing: { before: 400, after: 200 },
+  sections.push(
+    new Paragraph({
+      text: "Доходы по дням",
+      heading: HeadingLevel.HEADING_2,
+      spacing: { before: 400, after: 200 },
+    })
+  );
+
+  const sortedIncomeDates = Object.keys(data.dailyIncome).sort();
+  if (sortedIncomeDates.length > 0) {
+    const incomeRows: TableRow[] = [
+      new TableRow({
+        children: [
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Дата", bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Описание", bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Сумма", bold: true })] })] }),
+        ],
+      }),
+    ];
+
+    sortedIncomeDates.forEach((date) => {
+      const dayData = data.dailyIncome[date];
+      incomeRows.push(
+        new TableRow({
+          children: [
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: format(parseISO(date), "dd.MM.yyyy"), bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: format(parseISO(date), "EEEE", { locale: ru }), bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatMoney(dayData.total), bold: true })] })] }),
+          ],
+        })
+      );
+      dayData.items.forEach((item) => {
+        incomeRows.push(
+          new TableRow({
+            children: [
+              new TableCell({ children: [new Paragraph({ text: "" })] }),
+              new TableCell({ children: [new Paragraph({ text: item.name })] }),
+              new TableCell({ children: [new Paragraph({ text: formatMoney(item.amount) })] }),
+            ],
+          })
+        );
+      });
+    });
+
+    incomeRows.push(
+      new TableRow({
+        children: [
+          new TableCell({ children: [new Paragraph({ text: "" })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "ИТОГО", bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatMoney(data.analytics.totalIncome), bold: true })] })] }),
+        ],
       })
     );
 
-    const incomesHeader = new TableRow({
-      children: [
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Дата", bold: true })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Название", bold: true })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Сумма", bold: true })] })] }),
-      ],
-    });
-
-    const incomeRows = data.incomes.map(
-      (income) =>
-        new TableRow({
-          children: [
-            new TableCell({ children: [new Paragraph({ text: format(parseISO(income.date), "dd.MM.yyyy") })] }),
-            new TableCell({ children: [new Paragraph({ text: income.name })] }),
-            new TableCell({ children: [new Paragraph({ text: `${income.amount.toLocaleString("ru-RU")} ₽` })] }),
-          ],
-        })
+    sections.push(
+      new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        borders: tableBorders,
+        rows: incomeRows,
+      })
     );
-
-    const totalIncomeRow = new TableRow({
-      children: [
-        new TableCell({ children: [new Paragraph({ text: "" })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "ИТОГО", bold: true })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${data.analytics.totalIncome.toLocaleString("ru-RU")} ₽`, bold: true })] })] }),
-      ],
-    });
-
-    const incomesTable = new Table({
-      width: { size: 100, type: WidthType.PERCENTAGE },
-      borders: tableBorders,
-      rows: [incomesHeader, ...incomeRows, totalIncomeRow],
-    });
-
-    sections.push(incomesTable);
+  } else {
+    sections.push(new Paragraph({ text: "Нет данных о доходах за выбранный период." }));
   }
 
-  if (data.expenses.length > 0) {
+  sections.push(
+    new Paragraph({
+      text: "Расходы по дням",
+      heading: HeadingLevel.HEADING_2,
+      spacing: { before: 400, after: 200 },
+    })
+  );
+
+  const sortedExpenseDates = Object.keys(data.dailyExpense).sort();
+  if (sortedExpenseDates.length > 0) {
+    const expenseRows: TableRow[] = [
+      new TableRow({
+        children: [
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Дата", bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Описание", bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Сумма", bold: true })] })] }),
+        ],
+      }),
+    ];
+
+    sortedExpenseDates.forEach((date) => {
+      const dayData = data.dailyExpense[date];
+      expenseRows.push(
+        new TableRow({
+          children: [
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: format(parseISO(date), "dd.MM.yyyy"), bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: format(parseISO(date), "EEEE", { locale: ru }), bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatMoney(dayData.total), bold: true })] })] }),
+          ],
+        })
+      );
+      dayData.items.forEach((item) => {
+        expenseRows.push(
+          new TableRow({
+            children: [
+              new TableCell({ children: [new Paragraph({ text: "" })] }),
+              new TableCell({ children: [new Paragraph({ text: item.name })] }),
+              new TableCell({ children: [new Paragraph({ text: formatMoney(item.amount) })] }),
+            ],
+          })
+        );
+      });
+    });
+
+    expenseRows.push(
+      new TableRow({
+        children: [
+          new TableCell({ children: [new Paragraph({ text: "" })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "ИТОГО", bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatMoney(data.analytics.totalExpense), bold: true })] })] }),
+        ],
+      })
+    );
+
+    sections.push(
+      new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        borders: tableBorders,
+        rows: expenseRows,
+      })
+    );
+  } else {
+    sections.push(new Paragraph({ text: "Нет данных о расходах за выбранный период." }));
+  }
+
+  if (data.clientStats.length > 0) {
     sections.push(
       new Paragraph({
-        text: "Расходы",
+        text: "Клиенты",
         heading: HeadingLevel.HEADING_2,
         spacing: { before: 400, after: 200 },
       })
     );
 
-    const expensesHeader = new TableRow({
-      children: [
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Дата", bold: true })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Название", bold: true })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Сумма", bold: true })] })] }),
-      ],
-    });
+    const clientRows: TableRow[] = [
+      new TableRow({
+        children: [
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "#", bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Клиент", bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Записей", bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Сумма", bold: true })] })] }),
+        ],
+      }),
+    ];
 
-    const expenseRows = data.expenses.map(
-      (expense) =>
+    data.clientStats.forEach((client, index) => {
+      clientRows.push(
         new TableRow({
           children: [
-            new TableCell({ children: [new Paragraph({ text: format(parseISO(expense.date), "dd.MM.yyyy") })] }),
-            new TableCell({ children: [new Paragraph({ text: expense.name })] }),
-            new TableCell({ children: [new Paragraph({ text: `${expense.amount.toLocaleString("ru-RU")} ₽` })] }),
+            new TableCell({ children: [new Paragraph({ text: String(index + 1) })] }),
+            new TableCell({ children: [new Paragraph({ text: client.name })] }),
+            new TableCell({ children: [new Paragraph({ text: String(client.count) })] }),
+            new TableCell({ children: [new Paragraph({ text: formatMoney(client.total) })] }),
           ],
         })
+      );
+    });
+
+    sections.push(
+      new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        borders: tableBorders,
+        rows: clientRows,
+      })
+    );
+  }
+
+  if (data.serviceStats.length > 0) {
+    sections.push(
+      new Paragraph({
+        text: "ТОП услуг",
+        heading: HeadingLevel.HEADING_2,
+        spacing: { before: 400, after: 200 },
+      })
     );
 
-    const totalExpenseRow = new TableRow({
-      children: [
-        new TableCell({ children: [new Paragraph({ text: "" })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "ИТОГО", bold: true })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${data.analytics.totalExpense.toLocaleString("ru-RU")} ₽`, bold: true })] })] }),
-      ],
+    const serviceRows: TableRow[] = [
+      new TableRow({
+        children: [
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "#", bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Услуга", bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Кол-во", bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Сумма", bold: true })] })] }),
+        ],
+      }),
+    ];
+
+    data.serviceStats.forEach((service, index) => {
+      serviceRows.push(
+        new TableRow({
+          children: [
+            new TableCell({ children: [new Paragraph({ text: String(index + 1) })] }),
+            new TableCell({ children: [new Paragraph({ text: service.name })] }),
+            new TableCell({ children: [new Paragraph({ text: String(service.count) })] }),
+            new TableCell({ children: [new Paragraph({ text: formatMoney(service.total) })] }),
+          ],
+        })
+      );
     });
 
-    const expensesTable = new Table({
-      width: { size: 100, type: WidthType.PERCENTAGE },
-      borders: tableBorders,
-      rows: [expensesHeader, ...expenseRows, totalExpenseRow],
-    });
+    sections.push(
+      new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        borders: tableBorders,
+        rows: serviceRows,
+      })
+    );
+  }
 
-    sections.push(expensesTable);
+  if (data.employeeStats.length > 0) {
+    sections.push(
+      new Paragraph({
+        text: "ТОП сотрудников",
+        heading: HeadingLevel.HEADING_2,
+        spacing: { before: 400, after: 200 },
+      })
+    );
+
+    data.employeeStats.forEach((employee, index) => {
+      sections.push(
+        new Paragraph({
+          text: `${index + 1}. ${employee.name} - ${formatMoney(employee.total)} (${employee.count} записей)`,
+          spacing: { before: 100, after: 50 },
+        })
+      );
+
+      const serviceRows: TableRow[] = [
+        new TableRow({
+          children: [
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Услуга", bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Кол-во", bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Сумма", bold: true })] })] }),
+          ],
+        }),
+      ];
+
+      Object.entries(employee.services).forEach(([serviceName, stats]) => {
+        serviceRows.push(
+          new TableRow({
+            children: [
+              new TableCell({ children: [new Paragraph({ text: serviceName })] }),
+              new TableCell({ children: [new Paragraph({ text: String(stats.count) })] }),
+              new TableCell({ children: [new Paragraph({ text: formatMoney(stats.total) })] }),
+            ],
+          })
+        );
+      });
+
+      sections.push(
+        new Table({
+          width: { size: 100, type: WidthType.PERCENTAGE },
+          borders: tableBorders,
+          rows: serviceRows,
+        })
+      );
+    });
   }
 
   sections.push(
