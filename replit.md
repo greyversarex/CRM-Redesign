@@ -25,6 +25,11 @@ A CRM system for managing clients, services, appointments, and finances with cal
 - Added detailed Expense page (`/analytics/expense`) with daily breakdown and pie chart by category
 - Added detailed Clients page (`/analytics/clients`) showing client contributions with bar chart
 - Each detail page includes month navigation and add/delete functionality
+- Added report export feature for admin: download data as Excel or Word files
+  - Available periods: day, month, year
+  - Excel files include sheets: Summary, Records, Incomes, Expenses
+  - Word files include formatted tables with statistics and records
+  - Button "Скачать отчёт" on Analytics page
 
 ## Test Credentials
 
