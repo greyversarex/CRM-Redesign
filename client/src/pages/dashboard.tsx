@@ -240,6 +240,8 @@ function RecordCard({ record }: { record: RecordWithRelations }) {
     canceled: "Отменено",
   };
 
+  const completedByNames = record.completions?.map(c => c.employee?.fullName).filter(Boolean).join(", ");
+  
   return (
     <div className="p-3 border rounded-lg hover-elevate" data-testid={`record-card-${record.id}`}>
       <div className="flex flex-wrap items-start justify-between gap-1.5">
@@ -260,7 +262,7 @@ function RecordCard({ record }: { record: RecordWithRelations }) {
       <p className="text-xs text-muted-foreground mt-1">{record.client?.fullName || "Без клиента"}</p>
       <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
         <UserIcon className="h-3 w-3 shrink-0" />
-        <span className="truncate">{record.employee?.fullName || "—"}</span>
+        <span className="truncate">{completedByNames || "—"}</span>
         {record.reminder && (
           <Bell className="h-3 w-3 text-primary ml-auto shrink-0" />
         )}
