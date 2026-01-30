@@ -10,7 +10,16 @@ A CRM system for managing clients, services, appointments, and finances with cal
 
 ## Recent Changes (January 2026)
 
-### Major Logic Restructure: Multi-Employee Record Completion
+### Record Management Features
+- **Edit records**: Admins and managers can edit existing records (client, service, date, time, patient count)
+- **Delete records**: Admins and managers can delete records
+- **Price calculation**: Record price = Service price × Patient count (not affected by number of completions)
+
+### Employee Management Features
+- **Edit employees**: Admins can edit employee login, password, name, and role
+- **Delete employees**: Admins can delete employees (with option to cascade delete records)
+
+### Multi-Employee Record Completion
 - **Records are no longer assigned to specific employees at creation**
   - Records are visible to all employees
   - Any employee can complete any record
