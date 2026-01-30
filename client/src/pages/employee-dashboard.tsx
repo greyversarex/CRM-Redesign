@@ -18,6 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/lib/auth";
 import type { RecordWithRelations, Client, Service } from "@shared/schema";
 
 function QuickAddClientForm({ onSuccess, onClientCreated }: { onSuccess: () => void; onClientCreated?: (clientId: string) => void }) {
@@ -301,10 +302,13 @@ function CompleteRecordDialog({
   );
 }
 
-function RecordCard({ record, onComplete }: { 
+function RecordCard({ record, onComplete, currentUserId }: { 
   record: RecordWithRelations; 
   onComplete: (record: RecordWithRelations) => void;
+  currentUserId?: string;
 }) {
+  const hasCompletedByMe = currentUserId && record.completions?.some(c => c.employeeId === currentUserId);
+  
   return (
     <Card className="mb-3" data-testid={`employee-record-${record.id}`}>
       <CardContent className="p-4">
@@ -334,15 +338,22 @@ function RecordCard({ record, onComplete }: {
             </div>
           </div>
           <div className="flex flex-col items-end gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onComplete(record)}
-              data-testid={`button-complete-${record.id}`}
-            >
-              <Check className="h-4 w-4 mr-1" />
-              Выполнить
-            </Button>
+            {hasCompletedByMe ? (
+              <Badge className="bg-green-500">
+                <Check className="h-3 w-3 mr-1" />
+                Выполнено
+              </Badge>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onComplete(record)}
+                data-testid={`button-complete-${record.id}`}
+              >
+                <Check className="h-4 w-4 mr-1" />
+                Выполнить
+              </Button>
+            )}
           </div>
         </div>
       </CardContent>
@@ -354,6 +365,7 @@ export default function EmployeeDashboard() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [completeRecord, setCompleteRecord] = useState<RecordWithRelations | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const today = format(new Date(), "yyyy-MM-dd");
   const tomorrow = format(new Date(Date.now() + 86400000), "yyyy-MM-dd");
@@ -451,6 +463,7 @@ export default function EmployeeDashboard() {
                   key={record.id} 
                   record={record} 
                   onComplete={(r) => setCompleteRecord(r)}
+                  currentUserId={user?.id}
                 />
               ))}
             </ScrollArea>
@@ -478,6 +491,7 @@ export default function EmployeeDashboard() {
                   key={record.id} 
                   record={record} 
                   onComplete={(r) => setCompleteRecord(r)}
+                  currentUserId={user?.id}
                 />
               ))}
             </ScrollArea>
@@ -505,6 +519,7 @@ export default function EmployeeDashboard() {
                   key={record.id} 
                   record={record} 
                   onComplete={(r) => setCompleteRecord(r)}
+                  currentUserId={user?.id}
                 />
               ))}
             </ScrollArea>
