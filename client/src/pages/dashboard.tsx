@@ -170,27 +170,24 @@ function QuickRecordForm({ date, onSuccess }: { date: string; onSuccess: () => v
           />
         )}
       </div>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="space-y-2">
+        <Label>Услуга</Label>
+        <Select value={serviceId} onValueChange={setServiceId}>
+          <SelectTrigger className="w-full" data-testid="select-service-dashboard">
+            <SelectValue placeholder="Выберите услугу" />
+          </SelectTrigger>
+          <SelectContent>
+            {services.map((service) => (
+              <SelectItem key={service.id} value={service.id}>
+                {isAdmin ? `${service.name} - ${service.price} с` : service.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
-          <Label>Услуга</Label>
-          <Select value={serviceId} onValueChange={setServiceId}>
-            <SelectTrigger data-testid="select-service-dashboard">
-              <SelectValue placeholder="Выберите" />
-            </SelectTrigger>
-            <SelectContent>
-              {services.map((service) => (
-                <SelectItem key={service.id} value={service.id}>
-                  {isAdmin ? `${service.name} - ${service.price} с` : service.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label className="flex items-center gap-1">
-            <Clock className="h-3 w-3" />
-            Время
-          </Label>
+          <Label>Время</Label>
           <Input
             type="time"
             value={time}
