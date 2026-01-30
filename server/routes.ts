@@ -349,7 +349,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/records/:id", requireAuth, async (req, res) => {
+  app.patch("/api/records/:id", requireAdminOrManager, async (req, res) => {
     try {
       const existingRecord = await storage.getRecord(req.params.id);
       if (!existingRecord) {
