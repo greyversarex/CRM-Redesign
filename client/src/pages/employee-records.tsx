@@ -110,7 +110,7 @@ function RecordForm({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    mutation.mutate({ clientId: clientId || null, serviceId, date, time, reminder, patientCount, employeeId });
+    mutation.mutate({ clientId: clientId || null, serviceId, date, time, reminder, patientCount });
   }
 
   return (

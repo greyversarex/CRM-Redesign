@@ -78,12 +78,9 @@ function QuickRecordForm({ date, onSuccess }: { date: string; onSuccess: () => v
   const { toast } = useToast();
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
-  const isManager = user?.role === "manager";
-  const canSelectEmployee = isAdmin || isManager;
   
   const [clientId, setClientId] = useState("");
   const [serviceId, setServiceId] = useState("");
-  const [employeeId, setEmployeeId] = useState("");
   const [time, setTime] = useState("09:00");
   const [reminder, setReminder] = useState(false);
   const [patientCount, setPatientCount] = useState(1);
@@ -92,10 +89,6 @@ function QuickRecordForm({ date, onSuccess }: { date: string; onSuccess: () => v
 
   const { data: clients = [] } = useQuery<Client[]>({ queryKey: ["/api/clients"] });
   const { data: services = [] } = useQuery<Service[]>({ queryKey: ["/api/services"] });
-  const { data: employees = [] } = useQuery<Omit<User, "passwordHash">[]>({ 
-    queryKey: ["/api/users"],
-    enabled: canSelectEmployee 
-  });
 
   const selectedClient = clients.find(c => c.id === clientId);
 
@@ -115,11 +108,7 @@ function QuickRecordForm({ date, onSuccess }: { date: string; onSuccess: () => v
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const data: any = { clientId: clientId || null, serviceId, date, time, reminder, patientCount };
-    if (canSelectEmployee && employeeId) {
-      data.employeeId = employeeId;
-    }
-    mutation.mutate(data);
+    mutation.mutate({ clientId: clientId || null, serviceId, date, time, reminder, patientCount });
   }
 
   return (
@@ -181,24 +170,7 @@ function QuickRecordForm({ date, onSuccess }: { date: string; onSuccess: () => v
           />
         )}
       </div>
-      {canSelectEmployee && (
-        <div className="space-y-2">
-          <Label>Сотрудник</Label>
-          <Select value={employeeId} onValueChange={setEmployeeId}>
-            <SelectTrigger data-testid="select-employee-dashboard">
-              <SelectValue placeholder="Выберите сотрудника" />
-            </SelectTrigger>
-            <SelectContent>
-              {employees.filter(e => e.role === "employee").map((employee) => (
-                <SelectItem key={employee.id} value={employee.id}>
-                  {employee.fullName}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-      <div className="space-y-2">
+            <div className="space-y-2">
         <Label>Услуга</Label>
         <Select value={serviceId} onValueChange={setServiceId}>
           <SelectTrigger data-testid="select-service-dashboard">
