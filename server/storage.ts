@@ -221,15 +221,17 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(services, eq(records.serviceId, services.id))
       .leftJoin(users, eq(records.employeeId, users.id));
     
-    if (result.length === 0 || !result[0].clients || !result[0].services || !result[0].users) {
+    if (result.length === 0 || !result[0].services) {
       return undefined;
     }
 
+    const completions = await this.getRecordCompletions(result[0].records.id);
     return {
       ...result[0].records,
-      client: result[0].clients,
+      client: result[0].clients || undefined,
       service: result[0].services,
-      employee: result[0].users,
+      employee: result[0].users || undefined,
+      completions,
     };
   }
 
@@ -244,11 +246,11 @@ export class DatabaseStorage implements IStorage {
     
     const recordsWithCompletions: RecordWithRelations[] = [];
     
-    for (const r of result.filter((r) => r.clients && r.services)) {
+    for (const r of result.filter((r) => r.services)) {
       const completions = await this.getRecordCompletions(r.records.id);
       recordsWithCompletions.push({
         ...r.records,
-        client: r.clients!,
+        client: r.clients || undefined,
         service: r.services!,
         employee: r.users || undefined,
         completions,
@@ -269,11 +271,11 @@ export class DatabaseStorage implements IStorage {
     
     const recordsWithCompletions: RecordWithRelations[] = [];
     
-    for (const r of result.filter((r) => r.clients && r.services)) {
+    for (const r of result.filter((r) => r.services)) {
       const completions = await this.getRecordCompletions(r.records.id);
       recordsWithCompletions.push({
         ...r.records,
-        client: r.clients!,
+        client: r.clients || undefined,
         service: r.services!,
         employee: r.users || undefined,
         completions,
@@ -330,11 +332,11 @@ export class DatabaseStorage implements IStorage {
     
     const recordsWithCompletions: RecordWithRelations[] = [];
     
-    for (const r of result.filter((r) => r.clients && r.services)) {
+    for (const r of result.filter((r) => r.services)) {
       const completions = await this.getRecordCompletions(r.records.id);
       recordsWithCompletions.push({
         ...r.records,
-        client: r.clients!,
+        client: r.clients || undefined,
         service: r.services!,
         employee: r.users || undefined,
         completions,
@@ -723,7 +725,7 @@ export class DatabaseStorage implements IStorage {
     // Filter records that are within the next hour
     const recordsToNotify = result
       .filter((r) => {
-        if (!r.clients || !r.services || !r.users) return false;
+        if (!r.services) return false;
         const [recordHour, recordMinute] = r.records.time.split(':').map(Number);
         const recordMinutes = recordHour * 60 + recordMinute;
         const currentMinutes = currentHour * 60 + currentMinute;
@@ -733,9 +735,9 @@ export class DatabaseStorage implements IStorage {
       })
       .map((r) => ({
         ...r.records,
-        client: r.clients!,
+        client: r.clients || undefined,
         service: r.services!,
-        employee: r.users!,
+        employee: r.users || undefined,
       }));
 
     return recordsToNotify;
@@ -837,11 +839,11 @@ export class DatabaseStorage implements IStorage {
     
     const recordsWithCompletions: RecordWithRelations[] = [];
     
-    for (const r of result.filter((r) => r.clients && r.services)) {
+    for (const r of result.filter((r) => r.services)) {
       const completions = await this.getRecordCompletions(r.records.id);
       recordsWithCompletions.push({
         ...r.records,
-        client: r.clients!,
+        client: r.clients || undefined,
         service: r.services!,
         employee: r.users || undefined,
         completions,

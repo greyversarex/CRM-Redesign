@@ -176,7 +176,7 @@ export type RecordCompletionWithEmployee = RecordCompletion & {
 };
 
 export type RecordWithRelations = Record & {
-  client: Client;
+  client?: Client;
   service: Service;
   employee?: User | null;
   completions?: RecordCompletionWithEmployee[];
