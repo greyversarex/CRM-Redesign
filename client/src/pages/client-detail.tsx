@@ -111,7 +111,9 @@ export default function ClientDetailPage() {
                         {isAdmin && <p className="text-sm text-muted-foreground">{record.service.price} с</p>}
                       </div>
                     </TableCell>
-                    <TableCell>{record.employee.fullName}</TableCell>
+                    <TableCell>
+                      {record.completions?.map(c => c.employee?.fullName).filter(Boolean).join(", ") || "—"}
+                    </TableCell>
                     <TableCell className="text-right">
                       <Badge className={statusColors[record.status]}>
                         {statusLabels[record.status]}

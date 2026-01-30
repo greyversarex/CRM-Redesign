@@ -81,7 +81,12 @@ export interface IStorage {
   
   getEmployeeDailyAnalytics(employeeId: string, options?: { startDate?: string; endDate?: string; serviceId?: string }): Promise<{
     employee: { id: string; fullName: string };
-    dailyStats: { date: string; clientsServed: number; completedServices: number }[];
+    dailyStats: { 
+      date: string; 
+      clientsServed: number; 
+      completedServices: number;
+      serviceDetails: { serviceName: string; patientCount: number }[];
+    }[];
     totalClientsServed: number;
     totalServices: number;
   }>;
@@ -622,7 +627,7 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Employee not found");
     }
 
-    // Query from recordCompletions table joined with records
+    // Query from recordCompletions table joined with records and services
     const conditions = [eq(recordCompletions.employeeId, employeeId)];
 
     // Build query with joins to get record date and service info
@@ -631,9 +636,11 @@ export class DatabaseStorage implements IStorage {
         date: records.date,
         patientCount: recordCompletions.patientCount,
         serviceId: records.serviceId,
+        serviceName: services.name,
       })
       .from(recordCompletions)
-      .innerJoin(records, eq(recordCompletions.recordId, records.id));
+      .innerJoin(records, eq(recordCompletions.recordId, records.id))
+      .innerJoin(services, eq(records.serviceId, services.id));
 
     // Apply filters
     const filterConditions = [...conditions];
@@ -649,15 +656,28 @@ export class DatabaseStorage implements IStorage {
 
     const completions = await query.where(and(...filterConditions));
 
-    const dailyMap = new Map<string, { clientsServed: number; completedServices: number }>();
+    // Group by date and service
+    const dailyMap = new Map<string, { 
+      clientsServed: number; 
+      completedServices: number;
+      serviceDetails: { serviceName: string; patientCount: number }[];
+    }>();
     let totalClientsServed = 0;
     let totalServices = 0;
 
     for (const row of completions) {
       const patients = row.patientCount ?? 1;
-      const existing = dailyMap.get(row.date) || { clientsServed: 0, completedServices: 0 };
+      const existing = dailyMap.get(row.date) || { 
+        clientsServed: 0, 
+        completedServices: 0,
+        serviceDetails: []
+      };
       existing.clientsServed += patients;
       existing.completedServices += 1;
+      existing.serviceDetails.push({
+        serviceName: row.serviceName,
+        patientCount: patients,
+      });
       dailyMap.set(row.date, existing);
       totalClientsServed += patients;
       totalServices += 1;

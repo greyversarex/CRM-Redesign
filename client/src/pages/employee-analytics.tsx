@@ -16,7 +16,12 @@ import type { Service } from "@shared/schema";
 
 interface EmployeeAnalytics {
   employee: { id: string; fullName: string };
-  dailyStats: { date: string; clientsServed: number; completedServices: number }[];
+  dailyStats: { 
+    date: string; 
+    clientsServed: number; 
+    completedServices: number;
+    serviceDetails: { serviceName: string; patientCount: number }[];
+  }[];
   totalClientsServed: number;
   totalServices: number;
 }
@@ -181,32 +186,30 @@ export default function EmployeeAnalyticsPage() {
             </div>
           ) : (
             <ScrollArea className="h-[400px]">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Дата</TableHead>
-                    <TableHead className="text-center">Услуг</TableHead>
-                    <TableHead className="text-right">Клиентов</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {analytics.dailyStats.map((day) => (
-                    <TableRow key={day.date} data-testid={`row-${day.date}`}>
-                      <TableCell>
-                        <Link href={`/day/${day.date}`}>
-                          <span className="text-primary hover:underline cursor-pointer">
-                            {format(parseISO(day.date), "d MMMM yyyy", { locale: ru })}
-                          </span>
-                        </Link>
-                      </TableCell>
-                      <TableCell className="text-center">{day.completedServices}</TableCell>
-                      <TableCell className="text-right font-medium text-green-600">
-                        {day.clientsServed}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <div className="space-y-4">
+                {analytics.dailyStats.map((day) => (
+                  <div key={day.date} className="space-y-2" data-testid={`row-${day.date}`}>
+                    <div className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
+                      <Link href={`/day/${day.date}`}>
+                        <span className="text-primary hover:underline cursor-pointer font-medium">
+                          {format(parseISO(day.date), "d MMMM yyyy", { locale: ru })}
+                        </span>
+                      </Link>
+                      <span className="font-medium text-green-600">
+                        {day.clientsServed} пац.
+                      </span>
+                    </div>
+                    <div className="pl-4 space-y-1">
+                      {day.serviceDetails.map((service, idx) => (
+                        <div key={idx} className="flex items-center justify-between py-1 text-sm">
+                          <span>{service.serviceName}</span>
+                          <span className="text-muted-foreground">{service.patientCount} пац.</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </ScrollArea>
           )}
         </CardContent>
