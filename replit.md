@@ -10,26 +10,31 @@ A CRM system for managing clients, services, appointments, and finances with cal
 
 ## Recent Changes (January 2026)
 
+### Major Logic Restructure: Multi-Employee Record Completion
+- **Records are no longer assigned to specific employees at creation**
+  - Records are visible to all employees
+  - Any employee can complete any record
+  - Multiple employees can complete the same record
+- **New `recordCompletions` table** tracks:
+  - Which employee completed the record
+  - How many patients they served
+  - When the completion occurred
+- **Patient count per record**: Each record specifies expected patient count
+- **Income created on completion**: Income is generated when an employee completes a record, based on patient count
+- **Employee selection removed from record creation form**
+- **Completion dialog added**: Employees click "Выполнить" to open dialog where they enter patient count
+
+### Previous Changes
 - Implemented full CRM MVP with PostgreSQL database
 - Added authentication with session-based login
 - Created admin dashboard with calendar view
 - Built day page with tabs for records, income, expenses, and analytics
 - Added client, service, and employee management pages
-- Implemented auto-income generation when records are marked as done
 - Added monthly analytics with employee performance tracking
 - Added date and service filters to employee analytics page (admin view)
-- Added API endpoint `/api/records/employee/:employeeId` for managers to view employee records
-- Fixed employee records page to properly display records for managers
 - Enhanced analytics page with clickable cards for Income, Expense, and Clients
-- Added detailed Income page (`/analytics/income`) with daily breakdown and pie chart by service
-- Added detailed Expense page (`/analytics/expense`) with daily breakdown and pie chart by category
-- Added detailed Clients page (`/analytics/clients`) showing client contributions with bar chart
-- Each detail page includes month navigation and add/delete functionality
-- Added report export feature for admin: download data as Excel or Word files
-  - Available periods: day, month, year
-  - Excel files include sheets: Summary, Records, Incomes, Expenses
-  - Word files include formatted tables with statistics and records
-  - Button "Скачать отчёт" on Analytics page
+- Added detailed Income, Expense, Clients pages with charts
+- Added report export feature (Excel/Word files)
 
 ## Test Credentials
 

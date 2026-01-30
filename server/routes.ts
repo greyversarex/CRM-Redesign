@@ -365,6 +365,7 @@ export async function registerRoutes(
   });
 
   // Complete a record - employee marks as done with patient count
+  // Multiple employees can complete the same record
   app.post("/api/records/:id/complete", requireAuth, async (req, res) => {
     try {
       const record = await storage.getRecord(req.params.id);
@@ -375,15 +376,15 @@ export async function registerRoutes(
       const { patientCount = 1 } = req.body;
       const employeeId = req.session.userId!;
 
-      // Add completion record
+      // Add completion record (multiple employees can complete the same record)
       const completion = await storage.addRecordCompletion({
         recordId: record.id,
         employeeId,
         patientCount,
       });
 
-      // Update record status to done
-      await storage.updateRecord(record.id, { status: "done" });
+      // Don't change record status - allow multiple completions
+      // Status can be changed separately by admin if needed
 
       // Create income for this completion
       const pricePerPatient = record.service.price;

@@ -450,7 +450,6 @@ function RecordsTab({ date }: { date: string }) {
                         <Button
                           variant="outline"
                           size="icon"
-                          className="h-8 w-8 sm:h-9 sm:w-9 text-green-600 hover:text-green-700 hover:bg-green-50"
                           onClick={() => updateMutation.mutate({ id: record.id, status: "done" })}
                           data-testid={`button-complete-${record.id}`}
                         >
@@ -459,7 +458,6 @@ function RecordsTab({ date }: { date: string }) {
                         <Button
                           variant="outline"
                           size="icon"
-                          className="h-8 w-8 sm:h-9 sm:w-9 text-red-600 hover:text-red-700 hover:bg-red-50"
                           onClick={() => updateMutation.mutate({ id: record.id, status: "canceled" })}
                           data-testid={`button-cancel-${record.id}`}
                         >

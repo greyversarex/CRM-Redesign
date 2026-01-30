@@ -301,23 +301,10 @@ function CompleteRecordDialog({
   );
 }
 
-function RecordCard({ record, onComplete, onCancel }: { 
+function RecordCard({ record, onComplete }: { 
   record: RecordWithRelations; 
   onComplete: (record: RecordWithRelations) => void;
-  onCancel: (id: string) => void;
 }) {
-  const statusColors = {
-    pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-    done: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-    canceled: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-  };
-
-  const statusLabels = {
-    pending: "Ожидает",
-    done: "Выполнено",
-    canceled: "Отменено",
-  };
-
   return (
     <Card className="mb-3" data-testid={`employee-record-${record.id}`}>
       <CardContent className="p-4">
@@ -347,33 +334,15 @@ function RecordCard({ record, onComplete, onCancel }: {
             </div>
           </div>
           <div className="flex flex-col items-end gap-2">
-            <Badge className={statusColors[record.status]}>
-              {statusLabels[record.status]}
-            </Badge>
-            {record.status === "pending" && (
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                  onClick={() => onComplete(record)}
-                  data-testid={`button-complete-${record.id}`}
-                >
-                  <Check className="h-4 w-4 mr-1" />
-                  Выполнить
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                  onClick={() => onCancel(record.id)}
-                  data-testid={`button-cancel-${record.id}`}
-                >
-                  <X className="h-4 w-4 mr-1" />
-                  Отменить
-                </Button>
-              </div>
-            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onComplete(record)}
+              data-testid={`button-complete-${record.id}`}
+            >
+              <Check className="h-4 w-4 mr-1" />
+              Выполнить
+            </Button>
           </div>
         </div>
       </CardContent>
@@ -420,21 +389,8 @@ export default function EmployeeDashboard() {
     },
   });
 
-  const cancelMutation = useMutation({
-    mutationFn: (id: string) =>
-      apiRequest("PATCH", `/api/records/${id}`, { status: "canceled" }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/records"] });
-      toast({ title: "Запись отменена" });
-    },
-  });
-
   function handleComplete(recordId: string, patientCount: number) {
     completeMutation.mutate({ id: recordId, patientCount });
-  }
-
-  function handleCancel(id: string) {
-    cancelMutation.mutate(id);
   }
 
   return (
@@ -495,7 +451,6 @@ export default function EmployeeDashboard() {
                   key={record.id} 
                   record={record} 
                   onComplete={(r) => setCompleteRecord(r)}
-                  onCancel={handleCancel}
                 />
               ))}
             </ScrollArea>
@@ -523,7 +478,6 @@ export default function EmployeeDashboard() {
                   key={record.id} 
                   record={record} 
                   onComplete={(r) => setCompleteRecord(r)}
-                  onCancel={handleCancel}
                 />
               ))}
             </ScrollArea>
@@ -551,7 +505,6 @@ export default function EmployeeDashboard() {
                   key={record.id} 
                   record={record} 
                   onComplete={(r) => setCompleteRecord(r)}
-                  onCancel={handleCancel}
                 />
               ))}
             </ScrollArea>
