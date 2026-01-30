@@ -402,8 +402,8 @@ export default function EmployeeRecordsPage() {
               <TableRow>
                 <TableHead>Дата</TableHead>
                 <TableHead>Время</TableHead>
-                <TableHead>Клиент</TableHead>
                 <TableHead>Услуга</TableHead>
+                <TableHead>Клиент</TableHead>
                 <TableHead>Статус</TableHead>
                 <TableHead className="text-right">Действия</TableHead>
               </TableRow>
@@ -415,8 +415,8 @@ export default function EmployeeRecordsPage() {
                     {format(new Date(record.date), "dd.MM.yyyy")}
                   </TableCell>
                   <TableCell>{record.time}</TableCell>
-                  <TableCell className="font-medium">{record.client?.fullName}</TableCell>
-                  <TableCell>{record.service?.name}</TableCell>
+                  <TableCell className="font-medium">{record.service?.name}</TableCell>
+                  <TableCell>{record.client?.fullName || "Без клиента"}</TableCell>
                   <TableCell>{getStatusBadge(record.status)}</TableCell>
                   <TableCell className="text-right">
                     {record.status === "pending" && (
