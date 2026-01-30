@@ -2,12 +2,12 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { Plus, Calendar, Clock, Check, X, Bell, User, Briefcase, Search, UserPlus } from "lucide-react";
+import { Plus, Calendar, Clock, Check, X, Bell, User, Briefcase, Search, UserPlus, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -80,6 +80,7 @@ function RecordForm({ onSuccess }: { onSuccess: () => void }) {
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [time, setTime] = useState("09:00");
   const [reminder, setReminder] = useState(false);
+  const [patientCount, setPatientCount] = useState(1);
   const [clientOpen, setClientOpen] = useState(false);
   const [showAddClient, setShowAddClient] = useState(false);
 
@@ -102,7 +103,7 @@ function RecordForm({ onSuccess }: { onSuccess: () => void }) {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    mutation.mutate({ clientId, serviceId, date, time, reminder });
+    mutation.mutate({ clientId, serviceId, date, time, reminder, patientCount });
   }
 
   return (
@@ -209,6 +210,20 @@ function RecordForm({ onSuccess }: { onSuccess: () => void }) {
           />
         </div>
       </div>
+      <div className="space-y-2">
+        <Label className="flex items-center gap-1">
+          <Users className="h-3 w-3" />
+          Количество пациентов
+        </Label>
+        <Input
+          type="number"
+          min="1"
+          value={patientCount}
+          onChange={(e) => setPatientCount(parseInt(e.target.value) || 1)}
+          className="bg-white dark:bg-white dark:text-black"
+          data-testid="input-patient-count"
+        />
+      </div>
       <div className="flex items-center space-x-2">
         <Checkbox
           id="reminder"
@@ -224,9 +239,72 @@ function RecordForm({ onSuccess }: { onSuccess: () => void }) {
   );
 }
 
-function RecordCard({ record, onStatusChange }: { 
+function CompleteRecordDialog({ 
+  record, 
+  open, 
+  onOpenChange,
+  onComplete
+}: { 
   record: RecordWithRelations; 
-  onStatusChange: (id: string, status: string) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onComplete: (recordId: string, patientCount: number) => void;
+}) {
+  const [patientCount, setPatientCount] = useState(record.patientCount || 1);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Выполнить запись</DialogTitle>
+          <DialogDescription>
+            Укажите количество обслуженных пациентов
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label>Клиент</Label>
+            <p className="text-sm font-medium">{record.client.fullName}</p>
+          </div>
+          <div className="space-y-2">
+            <Label>Услуга</Label>
+            <p className="text-sm">{record.service.name}</p>
+          </div>
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1">
+              <Users className="h-3 w-3" />
+              Количество пациентов
+            </Label>
+            <Input
+              type="number"
+              min="1"
+              value={patientCount}
+              onChange={(e) => setPatientCount(parseInt(e.target.value) || 1)}
+              data-testid="input-complete-patient-count"
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Отмена
+          </Button>
+          <Button 
+            onClick={() => onComplete(record.id, patientCount)}
+            data-testid="button-confirm-complete"
+          >
+            <Check className="h-4 w-4 mr-2" />
+            Выполнить
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function RecordCard({ record, onComplete, onCancel }: { 
+  record: RecordWithRelations; 
+  onComplete: (record: RecordWithRelations) => void;
+  onCancel: (id: string) => void;
 }) {
   const statusColors = {
     pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
@@ -252,9 +330,11 @@ function RecordCard({ record, onStatusChange }: {
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
               <Briefcase className="h-3 w-3" />
-              <span>{record.service.name}</span>
+              <span>
+                {record.service.name}
+                {record.patientCount && record.patientCount > 1 && ` (${record.patientCount} пац.)`}
+              </span>
             </div>
-            <p className="text-sm font-medium text-primary">{record.service.price} с</p>
             <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
               <Calendar className="h-3 w-3" />
               <span>{format(new Date(record.date), "d MMMM yyyy", { locale: ru })}</span>
@@ -276,17 +356,17 @@ function RecordCard({ record, onStatusChange }: {
                   variant="outline"
                   size="sm"
                   className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                  onClick={() => onStatusChange(record.id, "done")}
+                  onClick={() => onComplete(record)}
                   data-testid={`button-complete-${record.id}`}
                 >
                   <Check className="h-4 w-4 mr-1" />
-                  Выполнено
+                  Выполнить
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                  onClick={() => onStatusChange(record.id, "canceled")}
+                  onClick={() => onCancel(record.id)}
                   data-testid={`button-cancel-${record.id}`}
                 >
                   <X className="h-4 w-4 mr-1" />
@@ -303,40 +383,64 @@ function RecordCard({ record, onStatusChange }: {
 
 export default function EmployeeDashboard() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [completeRecord, setCompleteRecord] = useState<RecordWithRelations | null>(null);
   const { toast } = useToast();
 
   const today = format(new Date(), "yyyy-MM-dd");
   const tomorrow = format(new Date(Date.now() + 86400000), "yyyy-MM-dd");
 
   const { data: todayRecords = [], isLoading: loadingToday } = useQuery<RecordWithRelations[]>({
-    queryKey: ["/api/records/my", { date: today }],
+    queryKey: ["/api/records", { date: today }],
   });
 
   const { data: tomorrowRecords = [], isLoading: loadingTomorrow } = useQuery<RecordWithRelations[]>({
-    queryKey: ["/api/records/my", { date: tomorrow }],
+    queryKey: ["/api/records", { date: tomorrow }],
   });
 
   const { data: allRecords = [], isLoading: loadingAll } = useQuery<RecordWithRelations[]>({
-    queryKey: ["/api/records/my"],
+    queryKey: ["/api/records"],
   });
 
-  const updateMutation = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: string }) =>
-      apiRequest("PATCH", `/api/records/${id}`, { status }),
+  const pendingTodayRecords = todayRecords.filter(r => r.status === "pending");
+  const pendingTomorrowRecords = tomorrowRecords.filter(r => r.status === "pending");
+  const pendingAllRecords = allRecords.filter(r => r.status === "pending");
+
+  const completeMutation = useMutation({
+    mutationFn: ({ id, patientCount }: { id: string; patientCount: number }) =>
+      apiRequest("POST", `/api/records/${id}/complete`, { patientCount }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/records"] });
-      toast({ title: "Статус обновлен" });
+      queryClient.invalidateQueries({ queryKey: ["/api/incomes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/earnings"] });
+      toast({ title: "Запись выполнена" });
+      setCompleteRecord(null);
+    },
+    onError: () => {
+      toast({ title: "Ошибка", variant: "destructive" });
     },
   });
 
-  function handleStatusChange(id: string, status: string) {
-    updateMutation.mutate({ id, status });
+  const cancelMutation = useMutation({
+    mutationFn: (id: string) =>
+      apiRequest("PATCH", `/api/records/${id}`, { status: "canceled" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/records"] });
+      toast({ title: "Запись отменена" });
+    },
+  });
+
+  function handleComplete(recordId: string, patientCount: number) {
+    completeMutation.mutate({ id: recordId, patientCount });
+  }
+
+  function handleCancel(id: string) {
+    cancelMutation.mutate(id);
   }
 
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
-        <h1 className="text-2xl font-bold" data-testid="text-employee-title">Мои записи</h1>
+        <h1 className="text-2xl font-bold" data-testid="text-employee-title">Все записи</h1>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button data-testid="button-add-record">
@@ -357,14 +461,14 @@ export default function EmployeeDashboard() {
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="today" data-testid="tab-today">
             Сегодня
-            {todayRecords.length > 0 && (
-              <Badge variant="secondary" className="ml-2">{todayRecords.length}</Badge>
+            {pendingTodayRecords.length > 0 && (
+              <Badge variant="secondary" className="ml-2">{pendingTodayRecords.length}</Badge>
             )}
           </TabsTrigger>
           <TabsTrigger value="tomorrow" data-testid="tab-tomorrow">
             Завтра
-            {tomorrowRecords.length > 0 && (
-              <Badge variant="secondary" className="ml-2">{tomorrowRecords.length}</Badge>
+            {pendingTomorrowRecords.length > 0 && (
+              <Badge variant="secondary" className="ml-2">{pendingTomorrowRecords.length}</Badge>
             )}
           </TabsTrigger>
           <TabsTrigger value="all" data-testid="tab-all">Все</TabsTrigger>
@@ -387,7 +491,12 @@ export default function EmployeeDashboard() {
           ) : (
             <ScrollArea className="h-[calc(100vh-280px)]">
               {todayRecords.map((record) => (
-                <RecordCard key={record.id} record={record} onStatusChange={handleStatusChange} />
+                <RecordCard 
+                  key={record.id} 
+                  record={record} 
+                  onComplete={(r) => setCompleteRecord(r)}
+                  onCancel={handleCancel}
+                />
               ))}
             </ScrollArea>
           )}
@@ -410,7 +519,12 @@ export default function EmployeeDashboard() {
           ) : (
             <ScrollArea className="h-[calc(100vh-280px)]">
               {tomorrowRecords.map((record) => (
-                <RecordCard key={record.id} record={record} onStatusChange={handleStatusChange} />
+                <RecordCard 
+                  key={record.id} 
+                  record={record} 
+                  onComplete={(r) => setCompleteRecord(r)}
+                  onCancel={handleCancel}
+                />
               ))}
             </ScrollArea>
           )}
@@ -433,12 +547,26 @@ export default function EmployeeDashboard() {
           ) : (
             <ScrollArea className="h-[calc(100vh-280px)]">
               {allRecords.map((record) => (
-                <RecordCard key={record.id} record={record} onStatusChange={handleStatusChange} />
+                <RecordCard 
+                  key={record.id} 
+                  record={record} 
+                  onComplete={(r) => setCompleteRecord(r)}
+                  onCancel={handleCancel}
+                />
               ))}
             </ScrollArea>
           )}
         </TabsContent>
       </Tabs>
+
+      {completeRecord && (
+        <CompleteRecordDialog
+          record={completeRecord}
+          open={!!completeRecord}
+          onOpenChange={(open) => !open && setCompleteRecord(null)}
+          onComplete={handleComplete}
+        />
+      )}
     </div>
   );
 }

@@ -87,27 +87,20 @@ function RecordForm({
   const { toast } = useToast();
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
-  const isManager = user?.role === "manager";
-  const canSelectEmployee = isAdmin || isManager;
   
   const [clientId, setClientId] = useState(record?.clientId || "");
   const [serviceId, setServiceId] = useState(record?.serviceId || "");
-  const [employeeId, setEmployeeId] = useState(record?.employeeId || "");
   const [selectedDate, setSelectedDate] = useState(record?.date || date);
   const [time, setTime] = useState(record?.time || "09:00");
   const [reminder, setReminder] = useState(record?.reminder || false);
+  const [patientCount, setPatientCount] = useState(record?.patientCount || 1);
   const [clientOpen, setClientOpen] = useState(false);
   const [showAddClient, setShowAddClient] = useState(false);
 
   const { data: clients = [] } = useQuery<Client[]>({ queryKey: ["/api/clients"] });
   const { data: services = [] } = useQuery<Service[]>({ queryKey: ["/api/services"] });
-  const { data: employees = [] } = useQuery<Omit<User, "passwordHash">[]>({ 
-    queryKey: ["/api/users"],
-    enabled: canSelectEmployee 
-  });
 
   const selectedClient = clients.find(c => c.id === clientId);
-  const selectedEmployee = employees.find(e => e.id === employeeId);
 
   const mutation = useMutation({
     mutationFn: async (data: any) => {
@@ -130,11 +123,7 @@ function RecordForm({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const data: any = { clientId, serviceId, date: selectedDate, time, reminder };
-    if (canSelectEmployee && employeeId) {
-      data.employeeId = employeeId;
-    }
-    mutation.mutate(data);
+    mutation.mutate({ clientId, serviceId, date: selectedDate, time, reminder, patientCount });
   }
 
   return (
@@ -198,23 +187,6 @@ function RecordForm({
           />
         )}
       </div>
-      {canSelectEmployee && (
-        <div className="space-y-2">
-          <Label>Сотрудник</Label>
-          <Select value={employeeId} onValueChange={setEmployeeId}>
-            <SelectTrigger className="bg-white dark:bg-white dark:text-black" data-testid="select-employee">
-              <SelectValue placeholder="Выберите сотрудника" />
-            </SelectTrigger>
-            <SelectContent>
-              {employees.filter(e => e.role === "employee").map((employee) => (
-                <SelectItem key={employee.id} value={employee.id}>
-                  {employee.fullName}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
       <div className="space-y-2">
         <Label>Услуга</Label>
         <Select value={serviceId} onValueChange={setServiceId}>
@@ -257,6 +229,20 @@ function RecordForm({
             data-testid="input-record-time"
           />
         </div>
+      </div>
+      <div className="space-y-2">
+        <Label className="flex items-center gap-1">
+          <Users className="h-3 w-3" />
+          Количество пациентов
+        </Label>
+        <Input
+          type="number"
+          min="1"
+          value={patientCount}
+          onChange={(e) => setPatientCount(parseInt(e.target.value) || 1)}
+          className="bg-white dark:bg-white dark:text-black"
+          data-testid="input-patient-count"
+        />
       </div>
       <div className="flex items-center space-x-2">
         <Checkbox
@@ -452,11 +438,11 @@ function RecordsTab({ date }: { date: string }) {
                       <h3 className="font-medium text-sm sm:text-base">{record.client.fullName}</h3>
                       {record.reminder && <Bell className="h-4 w-4 text-primary" />}
                     </div>
-                    <p className="text-xs sm:text-sm text-muted-foreground">{record.service.name}</p>
-                    {isAdmin && <p className="text-xs sm:text-sm font-medium text-primary mt-1">{record.service.price} с</p>}
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Сотрудник: {record.employee.fullName}
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      {record.service.name} 
+                      {record.patientCount && record.patientCount > 1 && ` (${record.patientCount} пац.)`}
                     </p>
+                    {isAdmin && <p className="text-xs sm:text-sm font-medium text-primary mt-1">{record.service.price} с</p>}
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
                     {record.status === "pending" && (
@@ -706,6 +692,7 @@ function AnalyticsTab({ date }: { date: string }) {
 
   const completedRecords = records.filter(r => r.status === "done");
   const employeeStats = completedRecords.reduce((acc, record) => {
+    if (!record.employee) return acc;
     const empId = record.employee.id;
     if (!acc[empId]) {
       acc[empId] = { name: record.employee.fullName, services: 0, revenue: 0 };
