@@ -170,42 +170,44 @@ function QuickRecordForm({ date, onSuccess }: { date: string; onSuccess: () => v
           />
         )}
       </div>
-            <div className="space-y-2">
-        <Label>Услуга</Label>
-        <Select value={serviceId} onValueChange={setServiceId}>
-          <SelectTrigger data-testid="select-service-dashboard">
-            <SelectValue placeholder="Выберите услугу" />
-          </SelectTrigger>
-          <SelectContent>
-            {services.map((service) => (
-              <SelectItem key={service.id} value={service.id}>
-                {isAdmin ? `${service.name} - ${service.price} с` : service.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="space-y-2">
-        <Label className="flex items-center gap-1">
-          <Clock className="h-3 w-3" />
-          Время
-        </Label>
-        <Input
-          type="time"
-          value={time}
-          onChange={(e) => setTime(e.target.value)}
-          data-testid="input-record-time-dashboard"
-        />
-      </div>
-      <div className="space-y-2">
-        <Label>Кол-во пациентов</Label>
-        <Input
-          type="number"
-          min={1}
-          value={patientCount}
-          onChange={(e) => setPatientCount(parseInt(e.target.value) || 1)}
-          data-testid="input-patient-count-dashboard"
-        />
+      <div className="grid grid-cols-3 gap-3">
+        <div className="space-y-2">
+          <Label>Услуга</Label>
+          <Select value={serviceId} onValueChange={setServiceId}>
+            <SelectTrigger data-testid="select-service-dashboard">
+              <SelectValue placeholder="Выберите" />
+            </SelectTrigger>
+            <SelectContent>
+              {services.map((service) => (
+                <SelectItem key={service.id} value={service.id}>
+                  {isAdmin ? `${service.name} - ${service.price} с` : service.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label className="flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            Время
+          </Label>
+          <Input
+            type="time"
+            value={time}
+            onChange={(e) => setTime(e.target.value)}
+            data-testid="input-record-time-dashboard"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Пациентов</Label>
+          <Input
+            type="number"
+            min={1}
+            value={patientCount}
+            onChange={(e) => setPatientCount(parseInt(e.target.value) || 1)}
+            data-testid="input-patient-count-dashboard"
+          />
+        </div>
       </div>
       <div className="flex items-center space-x-2">
         <Checkbox
