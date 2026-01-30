@@ -97,6 +97,7 @@ export const recordCompletionsRelations = relations(recordCompletions, ({ one })
 export const incomes = pgTable("incomes", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   date: date("date").notNull(),
+  time: text("time"),
   name: text("name").notNull(),
   amount: integer("amount").notNull(),
   recordId: varchar("record_id").references(() => records.id),
@@ -114,6 +115,7 @@ export const incomesRelations = relations(incomes, ({ one }) => ({
 export const expenses = pgTable("expenses", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   date: date("date").notNull(),
+  time: text("time"),
   name: text("name").notNull(),
   amount: integer("amount").notNull(),
   reminder: boolean("reminder").notNull().default(false),

@@ -403,6 +403,7 @@ export async function registerRoutes(
       const pricePerPatient = record.service.price;
       await storage.createIncome({
         date: record.date,
+        time: record.time || undefined,
         name: `${record.service.name} (${patientCount} пац.)`,
         amount: pricePerPatient * patientCount,
         recordId: record.id,

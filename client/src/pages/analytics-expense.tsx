@@ -17,6 +17,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recha
 interface ExpenseItem {
   id: string;
   date: string;
+  time: string | null;
   name: string;
   amount: number;
 }
@@ -263,7 +264,12 @@ export default function AnalyticsExpensePage() {
                               className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
                               data-testid={`expense-item-${expense.id}`}
                             >
-                              <p className="font-medium">{expense.name}</p>
+                              <div className="flex items-center gap-2">
+                                {expense.time && (
+                                  <span className="text-xs text-muted-foreground">{expense.time}</span>
+                                )}
+                                <p className="font-medium">{expense.name}</p>
+                              </div>
                               <div className="flex items-center gap-2">
                                 <span className="font-semibold text-red-600">{expense.amount} с</span>
                                 <Button

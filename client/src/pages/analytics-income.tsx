@@ -17,6 +17,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recha
 interface IncomeItem {
   id: string;
   date: string;
+  time: string | null;
   name: string;
   amount: number;
   recordId: string | null;
@@ -267,7 +268,12 @@ export default function AnalyticsIncomePage() {
                               data-testid={`income-item-${income.id}`}
                             >
                               <div>
-                                <p className="font-medium">{income.serviceName || income.name}</p>
+                                <div className="flex items-center gap-2">
+                                  {income.time && (
+                                    <span className="text-xs text-muted-foreground">{income.time}</span>
+                                  )}
+                                  <p className="font-medium">{income.serviceName || income.name}</p>
+                                </div>
                                 {income.employeeName && (
                                   <p className="text-sm text-muted-foreground">{income.employeeName}</p>
                                 )}
