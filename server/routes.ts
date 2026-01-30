@@ -6,7 +6,7 @@ import { pool } from "./db";
 import { storage } from "./storage";
 import { insertClientSchema, insertServiceSchema, insertRecordSchema, insertIncomeSchema, insertExpenseSchema, insertPushSubscriptionSchema } from "@shared/schema";
 import { z } from "zod";
-import { scrypt, randomBytes, timingSafeEqual } from "crypto";
+import { scrypt, scryptSync, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { getVapidPublicKey } from "./push";
 import { generateExcelReport, generateWordReport } from "./reports";
@@ -420,9 +420,35 @@ export async function registerRoutes(
     res.json(stats);
   });
 
-  app.delete("/api/records/:id", requireAuth, async (req, res) => {
+  app.delete("/api/records/:id", requireAdminOrManager, async (req, res) => {
     await storage.deleteRecord(req.params.id);
     res.json({ success: true });
+  });
+
+  // Update user (admin only) - for changing login/password
+  app.patch("/api/users/:id", requireAdmin, async (req, res) => {
+    try {
+      const { login, password, fullName, role } = req.body;
+      const updateData: any = {};
+      
+      if (login) updateData.login = login;
+      if (fullName) updateData.fullName = fullName;
+      if (role) updateData.role = role;
+      if (password) {
+        const salt = randomBytes(16).toString("hex");
+        const hash = scryptSync(password, salt, 64).toString("hex");
+        updateData.passwordHash = `${salt}:${hash}`;
+      }
+      
+      const user = await storage.updateUser(req.params.id, updateData);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      res.json(user);
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
   });
 
   app.get("/api/incomes", requireAdmin, async (req, res) => {

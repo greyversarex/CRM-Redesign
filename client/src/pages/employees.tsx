@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { Plus, UserCog, Trash2, Shield, User, BarChart3, AlertTriangle } from "lucide-react";
+import { Plus, UserCog, Trash2, Shield, User, BarChart3, AlertTriangle, Pencil } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -90,8 +90,88 @@ function EmployeeForm({ onSuccess }: { onSuccess: () => void }) {
   );
 }
 
+function EditEmployeeForm({ employee, onSuccess }: { employee: UserType; onSuccess: () => void }) {
+  const { toast } = useToast();
+  const [fullName, setFullName] = useState(employee.fullName);
+  const [login, setLogin] = useState(employee.login);
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState<"admin" | "manager" | "employee">(employee.role);
+
+  const mutation = useMutation({
+    mutationFn: (data: any) => apiRequest("PATCH", `/api/users/${employee.id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      toast({ title: "Сотрудник обновлен" });
+      onSuccess();
+    },
+    onError: () => {
+      toast({ title: "Ошибка", variant: "destructive" });
+    },
+  });
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const data: any = { fullName, login, role };
+    if (password) {
+      data.password = password;
+    }
+    mutation.mutate(data);
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label>ФИО</Label>
+        <Input
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
+          placeholder="Введите ФИО сотрудника"
+          data-testid="input-edit-employee-name"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label>Логин</Label>
+        <Input
+          value={login}
+          onChange={(e) => setLogin(e.target.value)}
+          placeholder="Введите логин"
+          data-testid="input-edit-employee-login"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label>Новый пароль (оставьте пустым, если не меняете)</Label>
+        <Input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Введите новый пароль"
+          data-testid="input-edit-employee-password"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label>Роль</Label>
+        <Select value={role} onValueChange={(v) => setRole(v as "admin" | "manager" | "employee")}>
+          <SelectTrigger data-testid="select-edit-employee-role">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="employee">Сотрудник</SelectItem>
+            <SelectItem value="manager">Менеджер</SelectItem>
+            <SelectItem value="admin">Администратор</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <Button type="submit" className="w-full" disabled={mutation.isPending} data-testid="button-update-employee">
+        {mutation.isPending ? "Сохранение..." : "Сохранить"}
+      </Button>
+    </form>
+  );
+}
+
 export default function EmployeesPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editUser, setEditUser] = useState<UserType | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<UserType | null>(null);
   const [recordsCount, setRecordsCount] = useState(0);
@@ -238,6 +318,17 @@ export default function EmployeesPage() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          onClick={() => {
+                            setEditUser(user);
+                            setIsEditDialogOpen(true);
+                          }}
+                          data-testid={`button-edit-employee-${user.id}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => handleDeleteClick(user)}
                           data-testid={`button-delete-employee-${user.id}`}
                         >
@@ -311,6 +402,24 @@ export default function EmployeesPage() {
               </Button>
             )}
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Employee Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Редактировать сотрудника</DialogTitle>
+          </DialogHeader>
+          {editUser && (
+            <EditEmployeeForm
+              employee={editUser}
+              onSuccess={() => {
+                setIsEditDialogOpen(false);
+                setEditUser(null);
+              }}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>

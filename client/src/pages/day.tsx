@@ -332,10 +332,14 @@ function FinanceForm({
 
 function RecordsTab({ date }: { date: string }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editRecord, setEditRecord] = useState<RecordWithRelations | null>(null);
   const [selectedService, setSelectedService] = useState("");
   const { toast } = useToast();
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
+  const isManager = user?.role === "manager";
+  const canEditRecords = isAdmin || isManager;
 
   const { data: records = [], isLoading } = useQuery<RecordWithRelations[]>({
     queryKey: ["/api/records", { date }],
@@ -481,15 +485,29 @@ function RecordsTab({ date }: { date: string }) {
                         ? "Отменено"
                         : "Ожидает"}
                     </Badge>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 sm:h-9 sm:w-9"
-                      onClick={() => deleteMutation.mutate(record.id)}
-                      data-testid={`button-delete-${record.id}`}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {canEditRecords && (
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setEditRecord(record);
+                            setIsEditDialogOpen(true);
+                          }}
+                          data-testid={`button-edit-${record.id}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => deleteMutation.mutate(record.id)}
+                          data-testid={`button-delete-${record.id}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -497,6 +515,25 @@ function RecordsTab({ date }: { date: string }) {
           ))}
         </div>
       )}
+
+      {/* Edit Record Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Редактировать запись</DialogTitle>
+          </DialogHeader>
+          {editRecord && (
+            <RecordForm
+              date={date}
+              record={editRecord}
+              onSuccess={() => {
+                setIsEditDialogOpen(false);
+                setEditRecord(null);
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
