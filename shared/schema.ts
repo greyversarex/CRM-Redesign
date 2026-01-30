@@ -47,10 +47,11 @@ export const records = pgTable("records", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   clientId: varchar("client_id").notNull().references(() => clients.id),
   serviceId: varchar("service_id").notNull().references(() => services.id),
-  employeeId: varchar("employee_id").notNull().references(() => users.id),
+  employeeId: varchar("employee_id").references(() => users.id),
   date: date("date").notNull(),
   time: text("time").notNull().default("09:00"),
   status: recordStatusEnum("status").notNull().default("pending"),
+  patientCount: integer("patient_count").notNull().default(1),
   reminder: boolean("reminder").notNull().default(false),
   notificationSentAt: timestamp("notification_sent_at"),
 });
@@ -69,6 +70,27 @@ export const recordsRelations = relations(records, ({ one, many }) => ({
     references: [users.id],
   }),
   incomes: many(incomes),
+  completions: many(recordCompletions),
+}));
+
+// Record completions - tracks which employees completed which records
+export const recordCompletions = pgTable("record_completions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  recordId: varchar("record_id").notNull().references(() => records.id, { onDelete: "cascade" }),
+  employeeId: varchar("employee_id").notNull().references(() => users.id),
+  patientCount: integer("patient_count").notNull().default(1),
+  completedAt: timestamp("completed_at").notNull().default(sql`now()`),
+});
+
+export const recordCompletionsRelations = relations(recordCompletions, ({ one }) => ({
+  record: one(records, {
+    fields: [recordCompletions.recordId],
+    references: [records.id],
+  }),
+  employee: one(users, {
+    fields: [recordCompletions.employeeId],
+    references: [users.id],
+  }),
 }));
 
 // Income table
@@ -119,6 +141,7 @@ export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export const insertClientSchema = createInsertSchema(clients).omit({ id: true });
 export const insertServiceSchema = createInsertSchema(services).omit({ id: true });
 export const insertRecordSchema = createInsertSchema(records).omit({ id: true, notificationSentAt: true });
+export const insertRecordCompletionSchema = createInsertSchema(recordCompletions).omit({ id: true, completedAt: true });
 export const insertIncomeSchema = createInsertSchema(incomes).omit({ id: true });
 export const insertExpenseSchema = createInsertSchema(expenses).omit({ id: true });
 export const insertPushSubscriptionSchema = createInsertSchema(pushSubscriptions).omit({ id: true, createdAt: true });
@@ -138,6 +161,8 @@ export type Service = typeof services.$inferSelect;
 export type InsertService = z.infer<typeof insertServiceSchema>;
 export type Record = typeof records.$inferSelect;
 export type InsertRecord = z.infer<typeof insertRecordSchema>;
+export type RecordCompletion = typeof recordCompletions.$inferSelect;
+export type InsertRecordCompletion = z.infer<typeof insertRecordCompletionSchema>;
 export type Income = typeof incomes.$inferSelect;
 export type InsertIncome = z.infer<typeof insertIncomeSchema>;
 export type Expense = typeof expenses.$inferSelect;
@@ -146,10 +171,15 @@ export type PushSubscription = typeof pushSubscriptions.$inferSelect;
 export type InsertPushSubscription = z.infer<typeof insertPushSubscriptionSchema>;
 
 // Extended types with relations
+export type RecordCompletionWithEmployee = RecordCompletion & {
+  employee: User;
+};
+
 export type RecordWithRelations = Record & {
   client: Client;
   service: Service;
-  employee: User;
+  employee?: User | null;
+  completions?: RecordCompletionWithEmployee[];
 };
 
 export type IncomeWithRelations = Income & {

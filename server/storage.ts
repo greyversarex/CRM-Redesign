@@ -1,9 +1,10 @@
 import {
-  users, clients, services, records, incomes, expenses, pushSubscriptions,
+  users, clients, services, records, incomes, expenses, pushSubscriptions, recordCompletions,
   type User, type InsertUser,
   type Client, type InsertClient,
   type Service, type InsertService,
   type Record as RecordType, type InsertRecord,
+  type RecordCompletion, type InsertRecordCompletion, type RecordCompletionWithEmployee,
   type Income, type InsertIncome,
   type Expense, type InsertExpense,
   type RecordWithRelations,
@@ -93,6 +94,18 @@ export interface IStorage {
   // Records needing notifications
   getRecordsNeedingNotification(): Promise<RecordWithRelations[]>;
   markRecordNotified(recordId: string): Promise<void>;
+  
+  // Record completions
+  getRecordCompletions(recordId: string): Promise<RecordCompletionWithEmployee[]>;
+  addRecordCompletion(completion: InsertRecordCompletion): Promise<RecordCompletion>;
+  deleteRecordCompletion(id: string): Promise<void>;
+  getEmployeeCompletions(employeeId: string, startDate?: string, endDate?: string): Promise<{
+    totalPatients: number;
+    byService: { serviceId: string; serviceName: string; patientCount: number; revenue: number }[];
+  }>;
+  
+  // Get all records (visible to all employees)
+  getAllRecords(date?: string): Promise<RecordWithRelations[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -223,14 +236,20 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(services, eq(records.serviceId, services.id))
       .leftJoin(users, eq(records.employeeId, users.id));
     
-    return result
-      .filter((r) => r.clients && r.services && r.users)
-      .map((r) => ({
+    const recordsWithCompletions: RecordWithRelations[] = [];
+    
+    for (const r of result.filter((r) => r.clients && r.services)) {
+      const completions = await this.getRecordCompletions(r.records.id);
+      recordsWithCompletions.push({
         ...r.records,
         client: r.clients!,
         service: r.services!,
-        employee: r.users!,
-      }));
+        employee: r.users || undefined,
+        completions,
+      });
+    }
+
+    return recordsWithCompletions;
   }
 
   async getRecordsByDateRange(startDate: string, endDate: string): Promise<RecordWithRelations[]> {
@@ -242,14 +261,20 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(services, eq(records.serviceId, services.id))
       .leftJoin(users, eq(records.employeeId, users.id));
     
-    return result
-      .filter((r) => r.clients && r.services && r.users)
-      .map((r) => ({
+    const recordsWithCompletions: RecordWithRelations[] = [];
+    
+    for (const r of result.filter((r) => r.clients && r.services)) {
+      const completions = await this.getRecordCompletions(r.records.id);
+      recordsWithCompletions.push({
         ...r.records,
         client: r.clients!,
         service: r.services!,
-        employee: r.users!,
-      }));
+        employee: r.users || undefined,
+        completions,
+      });
+    }
+
+    return recordsWithCompletions;
   }
 
   async getRecordsByClientId(clientId: string): Promise<RecordWithRelations[]> {
@@ -261,38 +286,56 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(services, eq(records.serviceId, services.id))
       .leftJoin(users, eq(records.employeeId, users.id));
     
-    return result
-      .filter((r) => r.clients && r.services && r.users)
-      .map((r) => ({
+    const recordsWithCompletions: RecordWithRelations[] = [];
+    
+    for (const r of result.filter((r) => r.clients && r.services)) {
+      const completions = await this.getRecordCompletions(r.records.id);
+      recordsWithCompletions.push({
         ...r.records,
         client: r.clients!,
         service: r.services!,
-        employee: r.users!,
-      }));
+        employee: r.users || undefined,
+        completions,
+      });
+    }
+
+    return recordsWithCompletions;
   }
 
   async getRecordsByEmployeeId(employeeId: string, date?: string): Promise<RecordWithRelations[]> {
-    const conditions = [eq(records.employeeId, employeeId)];
-    if (date) {
-      conditions.push(eq(records.date, date));
+    // Now returns records where the employee has completed them (via recordCompletions)
+    const employeeCompletions = await db
+      .select({ recordId: recordCompletions.recordId })
+      .from(recordCompletions)
+      .where(eq(recordCompletions.employeeId, employeeId));
+    
+    const recordIds = employeeCompletions.map(c => c.recordId);
+    if (recordIds.length === 0) {
+      return [];
     }
 
     const result = await db
       .select()
       .from(records)
-      .where(and(...conditions))
+      .where(date ? and(sql`${records.id} = ANY(${recordIds})`, eq(records.date, date)) : sql`${records.id} = ANY(${recordIds})`)
       .leftJoin(clients, eq(records.clientId, clients.id))
       .leftJoin(services, eq(records.serviceId, services.id))
       .leftJoin(users, eq(records.employeeId, users.id));
     
-    return result
-      .filter((r) => r.clients && r.services && r.users)
-      .map((r) => ({
+    const recordsWithCompletions: RecordWithRelations[] = [];
+    
+    for (const r of result.filter((r) => r.clients && r.services)) {
+      const completions = await this.getRecordCompletions(r.records.id);
+      recordsWithCompletions.push({
         ...r.records,
         client: r.clients!,
         service: r.services!,
-        employee: r.users!,
-      }));
+        employee: r.users || undefined,
+        completions,
+      });
+    }
+
+    return recordsWithCompletions;
   }
 
   async getRecordCountsByMonth(year: number, month: number): Promise<any> {
@@ -695,6 +738,112 @@ export class DatabaseStorage implements IStorage {
 
   async markRecordNotified(recordId: string): Promise<void> {
     await db.update(records).set({ notificationSentAt: new Date() }).where(eq(records.id, recordId));
+  }
+
+  // Record completions methods
+  async getRecordCompletions(recordId: string): Promise<RecordCompletionWithEmployee[]> {
+    const result = await db
+      .select()
+      .from(recordCompletions)
+      .where(eq(recordCompletions.recordId, recordId))
+      .leftJoin(users, eq(recordCompletions.employeeId, users.id));
+    
+    return result
+      .filter((r) => r.users)
+      .map((r) => ({
+        ...r.record_completions,
+        employee: r.users!,
+      }));
+  }
+
+  async addRecordCompletion(completion: InsertRecordCompletion): Promise<RecordCompletion> {
+    const [result] = await db.insert(recordCompletions).values(completion).returning();
+    return result;
+  }
+
+  async deleteRecordCompletion(id: string): Promise<void> {
+    await db.delete(recordCompletions).where(eq(recordCompletions.id, id));
+  }
+
+  async getEmployeeCompletions(employeeId: string, startDate?: string, endDate?: string): Promise<{
+    totalPatients: number;
+    byService: { serviceId: string; serviceName: string; patientCount: number; revenue: number }[];
+  }> {
+    const conditions = [eq(recordCompletions.employeeId, employeeId)];
+    
+    let query = db
+      .select({
+        patientCount: recordCompletions.patientCount,
+        serviceId: records.serviceId,
+        serviceName: services.name,
+        servicePrice: services.price,
+        recordDate: records.date,
+      })
+      .from(recordCompletions)
+      .leftJoin(records, eq(recordCompletions.recordId, records.id))
+      .leftJoin(services, eq(records.serviceId, services.id))
+      .where(eq(recordCompletions.employeeId, employeeId));
+
+    const result = await query;
+
+    // Filter by date range if specified
+    const filteredResult = result.filter((r) => {
+      if (!r.recordDate) return false;
+      if (startDate && r.recordDate < startDate) return false;
+      if (endDate && r.recordDate > endDate) return false;
+      return true;
+    });
+
+    // Calculate totals
+    let totalPatients = 0;
+    const serviceMap = new Map<string, { serviceName: string; patientCount: number; revenue: number }>();
+
+    for (const row of filteredResult) {
+      if (!row.serviceId || !row.serviceName) continue;
+      
+      totalPatients += row.patientCount;
+      
+      const existing = serviceMap.get(row.serviceId) || {
+        serviceName: row.serviceName,
+        patientCount: 0,
+        revenue: 0,
+      };
+      existing.patientCount += row.patientCount;
+      existing.revenue += (row.servicePrice || 0) * row.patientCount;
+      serviceMap.set(row.serviceId, existing);
+    }
+
+    const byService = Array.from(serviceMap.entries()).map(([serviceId, data]) => ({
+      serviceId,
+      ...data,
+    })).sort((a, b) => b.patientCount - a.patientCount);
+
+    return { totalPatients, byService };
+  }
+
+  async getAllRecords(date?: string): Promise<RecordWithRelations[]> {
+    const result = await db
+      .select()
+      .from(records)
+      .where(date ? eq(records.date, date) : sql`1=1`)
+      .leftJoin(clients, eq(records.clientId, clients.id))
+      .leftJoin(services, eq(records.serviceId, services.id))
+      .leftJoin(users, eq(records.employeeId, users.id));
+    
+    const recordsWithCompletions: RecordWithRelations[] = [];
+    
+    for (const r of result.filter((r) => r.clients && r.services)) {
+      const completions = await this.getRecordCompletions(r.records.id);
+      recordsWithCompletions.push({
+        ...r.records,
+        client: r.clients!,
+        service: r.services!,
+        employee: r.users || undefined,
+        completions,
+      });
+    }
+
+    return recordsWithCompletions;
   }
 }
 

@@ -333,12 +333,11 @@ export async function registerRoutes(
 
   app.post("/api/records", requireAuth, async (req, res) => {
     try {
-      const user = await storage.getUser(req.session.userId!);
-      const canSelectEmployee = user?.role === "admin" || user?.role === "manager";
-      
+      // Records are now created without employeeId - visible to all employees
       const data = {
         ...req.body,
-        employeeId: canSelectEmployee && req.body.employeeId ? req.body.employeeId : req.session.userId!,
+        employeeId: null,
+        patientCount: req.body.patientCount || 1,
       };
       const record = await storage.createRecord(data);
       res.json(record);
@@ -357,22 +356,67 @@ export async function registerRoutes(
         return res.status(404).json({ error: "Record not found" });
       }
 
+      // Just update the record, income is created when completion is added
       const record = await storage.updateRecord(req.params.id, req.body);
-      
-      if (req.body.status === "done" && existingRecord.status !== "done") {
-        await storage.createIncome({
-          date: existingRecord.date,
-          name: existingRecord.service.name,
-          amount: existingRecord.service.price,
-          recordId: existingRecord.id,
-          reminder: false,
-        });
-      }
-
       res.json(record);
     } catch (error) {
       res.status(500).json({ error: "Internal server error" });
     }
+  });
+
+  // Complete a record - employee marks as done with patient count
+  app.post("/api/records/:id/complete", requireAuth, async (req, res) => {
+    try {
+      const record = await storage.getRecord(req.params.id);
+      if (!record) {
+        return res.status(404).json({ error: "Record not found" });
+      }
+
+      const { patientCount = 1 } = req.body;
+      const employeeId = req.session.userId!;
+
+      // Add completion record
+      const completion = await storage.addRecordCompletion({
+        recordId: record.id,
+        employeeId,
+        patientCount,
+      });
+
+      // Update record status to done
+      await storage.updateRecord(record.id, { status: "done" });
+
+      // Create income for this completion
+      const pricePerPatient = record.service.price;
+      await storage.createIncome({
+        date: record.date,
+        name: `${record.service.name} (${patientCount} пац.)`,
+        amount: pricePerPatient * patientCount,
+        recordId: record.id,
+        reminder: false,
+      });
+
+      res.json(completion);
+    } catch (error) {
+      console.error("Error completing record:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Get completions for a record
+  app.get("/api/records/:id/completions", requireAuth, async (req, res) => {
+    const completions = await storage.getRecordCompletions(req.params.id);
+    res.json(completions);
+  });
+
+  // Get employee patient/service statistics
+  app.get("/api/employees/:id/completions", requireAuth, async (req, res) => {
+    const { startDate, endDate } = req.query;
+    const stats = await storage.getEmployeeCompletions(
+      req.params.id,
+      startDate as string | undefined,
+      endDate as string | undefined
+    );
+    res.json(stats);
   });
 
   app.delete("/api/records/:id", requireAuth, async (req, res) => {
