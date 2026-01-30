@@ -85,6 +85,7 @@ function RecordForm({
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [time, setTime] = useState("09:00");
   const [reminder, setReminder] = useState(false);
+  const [patientCount, setPatientCount] = useState(1);
   const [clientOpen, setClientOpen] = useState(false);
   const [showAddClient, setShowAddClient] = useState(false);
 
@@ -109,7 +110,7 @@ function RecordForm({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    mutation.mutate({ clientId, serviceId, date, time, reminder, employeeId });
+    mutation.mutate({ clientId, serviceId, date, time, reminder, patientCount, employeeId });
   }
 
   return (
@@ -213,6 +214,16 @@ function RecordForm({
             data-testid="input-record-time"
           />
         </div>
+      </div>
+      <div className="space-y-2">
+        <Label>Кол-во пациентов</Label>
+        <Input
+          type="number"
+          min={1}
+          value={patientCount}
+          onChange={(e) => setPatientCount(parseInt(e.target.value) || 1)}
+          data-testid="input-patient-count"
+        />
       </div>
       <div className="flex items-center space-x-2">
         <Checkbox

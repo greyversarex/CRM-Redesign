@@ -86,6 +86,7 @@ function QuickRecordForm({ date, onSuccess }: { date: string; onSuccess: () => v
   const [employeeId, setEmployeeId] = useState("");
   const [time, setTime] = useState("09:00");
   const [reminder, setReminder] = useState(false);
+  const [patientCount, setPatientCount] = useState(1);
   const [clientOpen, setClientOpen] = useState(false);
   const [showAddClient, setShowAddClient] = useState(false);
 
@@ -114,7 +115,7 @@ function QuickRecordForm({ date, onSuccess }: { date: string; onSuccess: () => v
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const data: any = { clientId, serviceId, date, time, reminder };
+    const data: any = { clientId, serviceId, date, time, reminder, patientCount };
     if (canSelectEmployee && employeeId) {
       data.employeeId = employeeId;
     }
@@ -222,6 +223,16 @@ function QuickRecordForm({ date, onSuccess }: { date: string; onSuccess: () => v
           value={time}
           onChange={(e) => setTime(e.target.value)}
           data-testid="input-record-time-dashboard"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label>Кол-во пациентов</Label>
+        <Input
+          type="number"
+          min={1}
+          value={patientCount}
+          onChange={(e) => setPatientCount(parseInt(e.target.value) || 1)}
+          data-testid="input-patient-count-dashboard"
         />
       </div>
       <div className="flex items-center space-x-2">
