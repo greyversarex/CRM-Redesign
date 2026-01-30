@@ -376,6 +376,19 @@ export async function registerRoutes(
       const { patientCount = 1 } = req.body;
       const employeeId = req.session.userId!;
 
+      // Validate patient count - cannot exceed record's patient count
+      const maxPatients = record.patientCount ?? 1;
+      if (patientCount > maxPatients) {
+        return res.status(400).json({ 
+          error: `Количество пациентов не может превышать ${maxPatients}` 
+        });
+      }
+      if (patientCount < 1) {
+        return res.status(400).json({ 
+          error: "Количество пациентов должно быть не менее 1" 
+        });
+      }
+
       // Add completion record (multiple employees can complete the same record)
       const completion = await storage.addRecordCompletion({
         recordId: record.id,
@@ -383,8 +396,8 @@ export async function registerRoutes(
         patientCount,
       });
 
-      // Don't change record status - allow multiple completions
-      // Status can be changed separately by admin if needed
+      // Update record status to "done" when completed
+      await storage.updateRecord(record.id, { status: "done" });
 
       // Create income for this completion
       const pricePerPatient = record.service.price;

@@ -622,34 +622,38 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Employee not found");
     }
 
-    const conditions = [
-      eq(records.employeeId, employeeId),
-      eq(records.status, "done")
-    ];
+    // Query from recordCompletions table joined with records
+    const conditions = [eq(recordCompletions.employeeId, employeeId)];
 
-    if (options?.startDate) {
-      conditions.push(gte(records.date, options.startDate));
-    }
-    if (options?.endDate) {
-      conditions.push(lte(records.date, options.endDate));
-    }
-    if (options?.serviceId) {
-      conditions.push(eq(records.serviceId, options.serviceId));
-    }
-
-    const completedRecords = await db
+    // Build query with joins to get record date and service info
+    let query = db
       .select({
         date: records.date,
-        patientCount: records.patientCount,
+        patientCount: recordCompletions.patientCount,
+        serviceId: records.serviceId,
       })
-      .from(records)
-      .where(and(...conditions));
+      .from(recordCompletions)
+      .innerJoin(records, eq(recordCompletions.recordId, records.id));
+
+    // Apply filters
+    const filterConditions = [...conditions];
+    if (options?.startDate) {
+      filterConditions.push(gte(records.date, options.startDate));
+    }
+    if (options?.endDate) {
+      filterConditions.push(lte(records.date, options.endDate));
+    }
+    if (options?.serviceId) {
+      filterConditions.push(eq(records.serviceId, options.serviceId));
+    }
+
+    const completions = await query.where(and(...filterConditions));
 
     const dailyMap = new Map<string, { clientsServed: number; completedServices: number }>();
     let totalClientsServed = 0;
     let totalServices = 0;
 
-    for (const row of completedRecords) {
+    for (const row of completions) {
       const patients = row.patientCount ?? 1;
       const existing = dailyMap.get(row.date) || { clientsServed: 0, completedServices: 0 };
       existing.clientsServed += patients;
