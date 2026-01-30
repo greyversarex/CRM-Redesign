@@ -14,6 +14,12 @@ A CRM system for managing clients, services, appointments, and finances with cal
 - **Edit records**: Admins and managers can edit existing records (client, service, date, time, patient count)
 - **Delete records**: Admins and managers can delete records
 - **Price calculation**: Record price = Service price × Patient count (not affected by number of completions)
+- **Client is optional**: Records can be created without selecting a client
+
+### Employee Analytics
+- **Removed revenue tracking**: Employee performance no longer tracks money earned
+- **New metrics**: Clients served (patient count) and services completed
+- **Daily stats**: Shows clients served and services per day
 
 ### Client Management Features
 - **Edit clients**: Change client name and phone number

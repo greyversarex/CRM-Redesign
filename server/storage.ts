@@ -81,8 +81,8 @@ export interface IStorage {
   
   getEmployeeDailyAnalytics(employeeId: string, options?: { startDate?: string; endDate?: string; serviceId?: string }): Promise<{
     employee: { id: string; fullName: string };
-    dailyStats: { date: string; revenue: number; completedServices: number }[];
-    totalRevenue: number;
+    dailyStats: { date: string; clientsServed: number; completedServices: number }[];
+    totalClientsServed: number;
     totalServices: number;
   }>;
   
@@ -638,23 +638,22 @@ export class DatabaseStorage implements IStorage {
     const completedRecords = await db
       .select({
         date: records.date,
-        price: services.price,
+        patientCount: records.patientCount,
       })
       .from(records)
-      .leftJoin(services, eq(records.serviceId, services.id))
       .where(and(...conditions));
 
-    const dailyMap = new Map<string, { revenue: number; completedServices: number }>();
-    let totalRevenue = 0;
+    const dailyMap = new Map<string, { clientsServed: number; completedServices: number }>();
+    let totalClientsServed = 0;
     let totalServices = 0;
 
     for (const row of completedRecords) {
-      const price = row.price ?? 0;
-      const existing = dailyMap.get(row.date) || { revenue: 0, completedServices: 0 };
-      existing.revenue += price;
+      const patients = row.patientCount ?? 1;
+      const existing = dailyMap.get(row.date) || { clientsServed: 0, completedServices: 0 };
+      existing.clientsServed += patients;
       existing.completedServices += 1;
       dailyMap.set(row.date, existing);
-      totalRevenue += price;
+      totalClientsServed += patients;
       totalServices += 1;
     }
 
@@ -665,7 +664,7 @@ export class DatabaseStorage implements IStorage {
     return {
       employee: { id: employee.id, fullName: employee.fullName },
       dailyStats,
-      totalRevenue,
+      totalClientsServed,
       totalServices,
     };
   }

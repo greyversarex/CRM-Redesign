@@ -110,13 +110,13 @@ function RecordForm({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    mutation.mutate({ clientId, serviceId, date, time, reminder, patientCount, employeeId });
+    mutation.mutate({ clientId: clientId || null, serviceId, date, time, reminder, patientCount, employeeId });
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label>Клиент</Label>
+        <Label>Клиент (необязательно)</Label>
         <Popover open={clientOpen} onOpenChange={setClientOpen}>
           <PopoverTrigger asChild>
             <Button
@@ -125,7 +125,7 @@ function RecordForm({
               className="w-full justify-between font-normal"
               data-testid="select-client"
             >
-              {selectedClient ? selectedClient.fullName : "Выберите клиента"}
+              {selectedClient ? selectedClient.fullName : "Без клиента"}
               <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>

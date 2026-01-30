@@ -115,7 +115,7 @@ function QuickRecordForm({ date, onSuccess }: { date: string; onSuccess: () => v
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const data: any = { clientId, serviceId, date, time, reminder, patientCount };
+    const data: any = { clientId: clientId || null, serviceId, date, time, reminder, patientCount };
     if (canSelectEmployee && employeeId) {
       data.employeeId = employeeId;
     }
@@ -125,7 +125,7 @@ function QuickRecordForm({ date, onSuccess }: { date: string; onSuccess: () => v
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label>Клиент</Label>
+        <Label>Клиент (необязательно)</Label>
         <Popover open={clientOpen} onOpenChange={setClientOpen}>
           <PopoverTrigger asChild>
             <Button
@@ -134,7 +134,7 @@ function QuickRecordForm({ date, onSuccess }: { date: string; onSuccess: () => v
               className="w-full justify-between font-normal"
               data-testid="select-client-dashboard"
             >
-              {selectedClient ? selectedClient.fullName : "Выберите клиента"}
+              {selectedClient ? selectedClient.fullName : "Без клиента"}
               <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
@@ -273,7 +273,7 @@ function RecordCard({ record }: { record: RecordWithRelations }) {
     <div className="p-3 border rounded-lg hover-elevate" data-testid={`record-card-${record.id}`}>
       <div className="flex flex-wrap items-start justify-between gap-1.5">
         <div className="flex items-center gap-2 min-w-0">
-          <p className="font-medium text-sm">{record.client.fullName}</p>
+          <p className="font-medium text-sm">{record.client?.fullName || "Без клиента"}</p>
           {record.time && (
             <span className="text-xs text-primary font-medium whitespace-nowrap">{record.time}</span>
           )}

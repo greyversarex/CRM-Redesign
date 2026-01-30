@@ -45,7 +45,7 @@ export const servicesRelations = relations(services, ({ many }) => ({
 // Records table (appointments/bookings)
 export const records = pgTable("records", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  clientId: varchar("client_id").notNull().references(() => clients.id),
+  clientId: varchar("client_id").references(() => clients.id),
   serviceId: varchar("service_id").notNull().references(() => services.id),
   employeeId: varchar("employee_id").references(() => users.id),
   date: date("date").notNull(),

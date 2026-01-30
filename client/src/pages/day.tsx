@@ -123,13 +123,13 @@ function RecordForm({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    mutation.mutate({ clientId, serviceId, date: selectedDate, time, reminder, patientCount });
+    mutation.mutate({ clientId: clientId || null, serviceId, date: selectedDate, time, reminder, patientCount });
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label>Клиент</Label>
+        <Label>Клиент (необязательно)</Label>
         <Popover open={clientOpen} onOpenChange={setClientOpen}>
           <PopoverTrigger asChild>
             <Button
@@ -138,7 +138,7 @@ function RecordForm({
               className="w-full justify-between font-normal bg-white dark:bg-white dark:text-black"
               data-testid="select-client"
             >
-              {selectedClient ? selectedClient.fullName : "Выберите клиента"}
+              {selectedClient ? selectedClient.fullName : "Без клиента"}
               <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
@@ -439,7 +439,7 @@ function RecordsTab({ date }: { date: string }) {
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-medium text-sm sm:text-base">{record.client.fullName}</h3>
+                      <h3 className="font-medium text-sm sm:text-base">{record.client?.fullName || "Без клиента"}</h3>
                       {record.reminder && <Bell className="h-4 w-4 text-primary" />}
                     </div>
                     <p className="text-xs sm:text-sm text-muted-foreground">

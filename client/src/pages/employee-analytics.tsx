@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import { format, parseISO } from "date-fns";
 import { ru } from "date-fns/locale";
-import { ArrowLeft, User, Calendar, DollarSign, Briefcase } from "lucide-react";
+import { ArrowLeft, User, Calendar, Users, Briefcase } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,8 +16,8 @@ import type { Service } from "@shared/schema";
 
 interface EmployeeAnalytics {
   employee: { id: string; fullName: string };
-  dailyStats: { date: string; revenue: number; completedServices: number }[];
-  totalRevenue: number;
+  dailyStats: { date: string; clientsServed: number; completedServices: number }[];
+  totalClientsServed: number;
   totalServices: number;
 }
 
@@ -142,11 +142,11 @@ export default function EmployeeAnalyticsPage() {
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
+                <Users className="h-5 w-5 text-green-600 dark:text-green-400" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Общий доход</p>
-                <p className="text-2xl font-bold text-green-600">{analytics.totalRevenue} с</p>
+                <p className="text-sm text-muted-foreground">Обслужено клиентов</p>
+                <p className="text-2xl font-bold text-green-600">{analytics.totalClientsServed}</p>
               </div>
             </div>
           </CardContent>
@@ -158,7 +158,7 @@ export default function EmployeeAnalyticsPage() {
                 <Briefcase className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Всего услуг</p>
+                <p className="text-sm text-muted-foreground">Выполнено услуг</p>
                 <p className="text-2xl font-bold">{analytics.totalServices}</p>
               </div>
             </div>
@@ -170,7 +170,7 @@ export default function EmployeeAnalyticsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            Доходы по дням
+            Статистика по дням
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -186,7 +186,7 @@ export default function EmployeeAnalyticsPage() {
                   <TableRow>
                     <TableHead>Дата</TableHead>
                     <TableHead className="text-center">Услуг</TableHead>
-                    <TableHead className="text-right">Доход</TableHead>
+                    <TableHead className="text-right">Клиентов</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -201,7 +201,7 @@ export default function EmployeeAnalyticsPage() {
                       </TableCell>
                       <TableCell className="text-center">{day.completedServices}</TableCell>
                       <TableCell className="text-right font-medium text-green-600">
-                        +{day.revenue} с
+                        {day.clientsServed}
                       </TableCell>
                     </TableRow>
                   ))}
