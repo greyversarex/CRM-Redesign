@@ -15,6 +15,9 @@ A CRM system for managing clients, services, appointments, and finances with cal
 - **Delete records**: Admins and managers can delete records
 - **Price calculation**: Record price = Service price × Patient count (not affected by number of completions)
 
+### Client Management Features
+- **Edit clients**: Change client name and phone number
+
 ### Employee Management Features
 - **Edit employees**: Admins can edit employee login, password, name, and role
 - **Delete employees**: Admins can delete employees (with option to cascade delete records)

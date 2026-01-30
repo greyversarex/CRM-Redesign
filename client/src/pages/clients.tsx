@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { Plus, Phone, User, Trash2, Eye, Search, AlertTriangle } from "lucide-react";
+import { Plus, Phone, User, Trash2, Eye, Search, AlertTriangle, Pencil } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,6 +69,8 @@ function ClientForm({ onSuccess, client }: { onSuccess: () => void; client?: Cli
 
 export default function ClientsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editClient, setEditClient] = useState<Client | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   const [recordsCount, setRecordsCount] = useState(0);
@@ -194,6 +196,17 @@ export default function ClientsPage() {
                       <Button
                         variant="ghost"
                         size="icon"
+                        onClick={() => {
+                          setEditClient(client);
+                          setIsEditDialogOpen(true);
+                        }}
+                        data-testid={`button-edit-client-${client.id}`}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={() => handleDeleteClick(client)}
                         data-testid={`button-delete-client-${client.id}`}
                       >
@@ -266,6 +279,24 @@ export default function ClientsPage() {
               </Button>
             )}
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Client Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Редактировать клиента</DialogTitle>
+          </DialogHeader>
+          {editClient && (
+            <ClientForm
+              client={editClient}
+              onSuccess={() => {
+                setIsEditDialogOpen(false);
+                setEditClient(null);
+              }}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>
