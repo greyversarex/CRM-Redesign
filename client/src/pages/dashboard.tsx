@@ -286,7 +286,7 @@ function RecordCard({ record }: { record: RecordWithRelations }) {
       <p className="text-xs text-muted-foreground mt-1">{record.service.name}</p>
       <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
         <UserIcon className="h-3 w-3 shrink-0" />
-        <span className="truncate">{record.employee.fullName}</span>
+        <span className="truncate">{record.employee?.fullName || "—"}</span>
         {record.reminder && (
           <Bell className="h-3 w-3 text-primary ml-auto shrink-0" />
         )}
