@@ -585,8 +585,7 @@ export class DatabaseStorage implements IStorage {
           eq(records.status, "done")
         )
       )
-      .leftJoin(services, eq(records.serviceId, services.id))
-      .leftJoin(users, eq(records.employeeId, users.id));
+      .leftJoin(services, eq(records.serviceId, services.id));
 
     const totalIncome = monthIncomes.reduce((sum, i) => sum + i.amount, 0);
     const totalExpense = monthExpenses.reduce((sum, e) => sum + e.amount, 0);
@@ -595,18 +594,37 @@ export class DatabaseStorage implements IStorage {
       completedRecords.map((r) => r.records.clientId)
     );
 
+    // Get employee stats from recordCompletions table
+    const completionsData = await db
+      .select({
+        completionId: recordCompletions.id,
+        employeeId: recordCompletions.employeeId,
+        patientCount: recordCompletions.patientCount,
+        recordDate: records.date,
+        servicePrice: services.price,
+        employeeName: users.fullName,
+      })
+      .from(recordCompletions)
+      .innerJoin(records, eq(recordCompletions.recordId, records.id))
+      .innerJoin(services, eq(records.serviceId, services.id))
+      .innerJoin(users, eq(recordCompletions.employeeId, users.id))
+      .where(
+        and(
+          gte(records.date, startDate),
+          lte(records.date, endDate)
+        )
+      );
+
     const employeeMap = new Map<string, { fullName: string; completedServices: number; revenue: number }>();
-    for (const row of completedRecords) {
-      if (row.users && row.services) {
-        const existing = employeeMap.get(row.users.id) || {
-          fullName: row.users.fullName,
-          completedServices: 0,
-          revenue: 0,
-        };
-        existing.completedServices += 1;
-        existing.revenue += row.services.price * (row.records.patientCount || 1);
-        employeeMap.set(row.users.id, existing);
-      }
+    for (const row of completionsData) {
+      const existing = employeeMap.get(row.employeeId) || {
+        fullName: row.employeeName,
+        completedServices: 0,
+        revenue: 0,
+      };
+      existing.completedServices += 1;
+      existing.revenue += (row.servicePrice || 0) * (row.patientCount || 1);
+      employeeMap.set(row.employeeId, existing);
     }
 
     const employeeStats = Array.from(employeeMap.entries()).map(([id, data]) => ({
