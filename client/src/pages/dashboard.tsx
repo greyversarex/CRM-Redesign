@@ -241,6 +241,7 @@ function RecordCard({ record }: { record: RecordWithRelations }) {
   };
 
   const completedByNames = record.completions?.map(c => c.employee?.fullName).filter(Boolean).join(", ");
+  const effectiveStatus = (record.completions && record.completions.length > 0) ? "done" : record.status;
   
   return (
     <div className="p-3 border rounded-lg hover-elevate" data-testid={`record-card-${record.id}`}>
@@ -254,9 +255,9 @@ function RecordCard({ record }: { record: RecordWithRelations }) {
             <span className="text-xs text-primary font-medium whitespace-nowrap">{record.time}</span>
           )}
         </div>
-        <Badge variant="secondary" className={`text-xs whitespace-nowrap ${statusColors[record.status]}`}>
-          <span className="mr-1">{statusIcons[record.status]}</span>
-          {statusLabels[record.status]}
+        <Badge variant="secondary" className={`text-xs whitespace-nowrap ${statusColors[effectiveStatus]}`}>
+          <span className="mr-1">{statusIcons[effectiveStatus]}</span>
+          {statusLabels[effectiveStatus]}
         </Badge>
       </div>
       <p className="text-xs text-muted-foreground mt-1">{record.client?.fullName || "Без клиента"}</p>
