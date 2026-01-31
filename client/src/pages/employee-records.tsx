@@ -417,9 +417,9 @@ export default function EmployeeRecordsPage() {
                   <TableCell>{record.time}</TableCell>
                   <TableCell className="font-medium">{record.service?.name}</TableCell>
                   <TableCell>{record.client?.fullName || "Без клиента"}</TableCell>
-                  <TableCell>{getStatusBadge(record.status)}</TableCell>
+                  <TableCell>{getStatusBadge(record.completions && record.completions.length > 0 ? "done" : record.status)}</TableCell>
                   <TableCell className="text-right">
-                    {record.status === "pending" && (
+                    {record.status === "pending" && (!record.completions || record.completions.length === 0) && (
                       <div className="flex items-center justify-end gap-1">
                         <Button
                           variant="ghost"

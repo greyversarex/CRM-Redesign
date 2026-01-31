@@ -115,8 +115,8 @@ export default function ClientDetailPage() {
                       {record.completions?.map(c => c.employee?.fullName).filter(Boolean).join(", ") || "—"}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Badge className={statusColors[record.status]}>
-                        {statusLabels[record.status]}
+                      <Badge className={statusColors[(record.completions && record.completions.length > 0 ? "done" : record.status) as keyof typeof statusColors]}>
+                        {statusLabels[(record.completions && record.completions.length > 0 ? "done" : record.status) as keyof typeof statusLabels]}
                       </Badge>
                     </TableCell>
                   </TableRow>

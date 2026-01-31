@@ -442,16 +442,24 @@ function RecordsTab({ date }: { date: string }) {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-medium text-sm sm:text-base">{record.service.name}</h3>
+                      {record.patientCount && record.patientCount > 1 && (
+                        <span className="text-xs text-muted-foreground">({record.patientCount} пац.)</span>
+                      )}
                       {record.reminder && <Bell className="h-4 w-4 text-primary" />}
                     </div>
                     <p className="text-xs sm:text-sm text-muted-foreground">
                       {record.client?.fullName || "Без клиента"}
-                      {record.patientCount && record.patientCount > 1 && ` (${record.patientCount} пац.)`}
                     </p>
+                    {record.completions && record.completions.length > 0 && (
+                      <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                        <Users className="h-3 w-3" />
+                        {record.completions.map(c => c.employee?.fullName).filter(Boolean).join(", ")}
+                      </p>
+                    )}
                     {isAdmin && <p className="text-xs sm:text-sm font-medium text-primary mt-1">{record.service.price} с</p>}
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    {record.status === "pending" && (
+                    {record.status === "pending" && (!record.completions || record.completions.length === 0) && (
                       <>
                         <Button
                           variant="outline"
@@ -474,14 +482,14 @@ function RecordsTab({ date }: { date: string }) {
                     <Badge
                       className="text-xs"
                       variant={
-                        record.status === "done"
+                        (record.completions && record.completions.length > 0) || record.status === "done"
                           ? "default"
                           : record.status === "canceled"
                           ? "destructive"
                           : "secondary"
                       }
                     >
-                      {record.status === "done"
+                      {(record.completions && record.completions.length > 0) || record.status === "done"
                         ? "Выполнено"
                         : record.status === "canceled"
                         ? "Отменено"
@@ -727,17 +735,21 @@ function AnalyticsTab({ date }: { date: string }) {
     ? Math.round((totalIncome / (totalIncome + totalExpense)) * 100) 
     : 0;
 
-  const completedRecords = records.filter(r => r.status === "done");
+  const completedRecords = records.filter(r => r.status === "done" || (r.completions && r.completions.length > 0));
   const employeeStats = completedRecords.reduce((acc, record) => {
-    if (!record.employee) return acc;
-    const empId = record.employee.id;
-    if (!acc[empId]) {
-      acc[empId] = { name: record.employee.fullName, services: 0, revenue: 0 };
+    if (record.completions && record.completions.length > 0) {
+      record.completions.forEach(completion => {
+        if (!completion.employee) return;
+        const empId = completion.employee.id;
+        if (!acc[empId]) {
+          acc[empId] = { name: completion.employee.fullName, clients: 0, services: 0 };
+        }
+        acc[empId].clients += completion.patientCount || 1;
+        acc[empId].services += 1;
+      });
     }
-    acc[empId].services += 1;
-    acc[empId].revenue += record.service.price;
     return acc;
-  }, {} as Record<string, { name: string; services: number; revenue: number }>);
+  }, {} as Record<string, { name: string; clients: number; services: number }>);
 
   return (
     <div className="space-y-6">
@@ -857,17 +869,17 @@ function AnalyticsTab({ date }: { date: string }) {
               <TableHeader>
                 <TableRow>
                   <TableHead>Сотрудник</TableHead>
-                  <TableHead className="text-center">Услуг</TableHead>
-                  <TableHead className="text-right">Сумма</TableHead>
+                  <TableHead className="text-center">Клиентов</TableHead>
+                  <TableHead className="text-right">Услуг</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {Object.entries(employeeStats).map(([empId, stats]) => (
                   <TableRow key={empId}>
                     <TableCell className="font-medium">{stats.name}</TableCell>
-                    <TableCell className="text-center">{stats.services}</TableCell>
-                    <TableCell className="text-right font-medium text-green-600">
-                      {stats.revenue} с
+                    <TableCell className="text-center">{stats.clients}</TableCell>
+                    <TableCell className="text-right font-medium">
+                      {stats.services}
                     </TableCell>
                   </TableRow>
                 ))}
