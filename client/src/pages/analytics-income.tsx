@@ -270,8 +270,8 @@ export default function AnalyticsIncomePage() {
                   </div>
                   <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                        <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                        <FileText className="h-5 w-5 text-green-600 dark:text-green-400" />
                       </div>
                       <span className="text-sm text-muted-foreground">Записей</span>
                     </div>
@@ -279,8 +279,8 @@ export default function AnalyticsIncomePage() {
                   </div>
                   <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                        <Users className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                      <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                        <Users className="h-5 w-5 text-green-600 dark:text-green-400" />
                       </div>
                       <span className="text-sm text-muted-foreground">Клиентов</span>
                     </div>

@@ -3,10 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { format, startOfMonth, endOfMonth, subMonths, addMonths, startOfYear, endOfYear, startOfDay, endOfDay } from "date-fns";
 import { ru } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, DollarSign, Users, UserCog, Download, FileSpreadsheet, FileText, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, DollarSign, Users, Download, FileSpreadsheet, FileText, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -268,44 +267,6 @@ export default function AnalyticsPage() {
               </CardContent>
             </Card>
           </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <UserCog className="h-5 w-5" />
-                Статистика по сотрудникам
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {!analytics?.employeeStats || analytics.employeeStats.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                  <UserCog className="h-12 w-12 mb-4 opacity-50" />
-                  <p>Нет данных за этот месяц</p>
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>ФИО</TableHead>
-                      <TableHead className="text-right">Выполнено услуг</TableHead>
-                      <TableHead className="text-right">Принесенный доход</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {analytics.employeeStats.map((employee) => (
-                      <TableRow key={employee.id}>
-                        <TableCell className="font-medium">{employee.fullName}</TableCell>
-                        <TableCell className="text-right">{employee.completedServices}</TableCell>
-                        <TableCell className="text-right font-medium text-green-600">
-                          {employee.revenue} с
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
         </>
       )}
     </div>
