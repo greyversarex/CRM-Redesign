@@ -85,7 +85,7 @@ export interface IStorage {
       date: string; 
       clientsServed: number; 
       completedServices: number;
-      serviceDetails: { serviceName: string; patientCount: number }[];
+      serviceDetails: { serviceName: string; patientCount: number; time?: string }[];
     }[];
     totalClientsServed: number;
     totalServices: number;
@@ -636,6 +636,7 @@ export class DatabaseStorage implements IStorage {
     let query = db
       .select({
         date: records.date,
+        time: records.time,
         patientCount: recordCompletions.patientCount,
         serviceId: records.serviceId,
         serviceName: services.name,
@@ -662,7 +663,7 @@ export class DatabaseStorage implements IStorage {
     const dailyMap = new Map<string, { 
       clientsServed: number; 
       completedServices: number;
-      serviceDetails: { serviceName: string; patientCount: number }[];
+      serviceDetails: { serviceName: string; patientCount: number; time?: string }[];
     }>();
     let totalClientsServed = 0;
     let totalServices = 0;
@@ -679,6 +680,7 @@ export class DatabaseStorage implements IStorage {
       existing.serviceDetails.push({
         serviceName: row.serviceName,
         patientCount: patients,
+        time: row.time || undefined,
       });
       dailyMap.set(row.date, existing);
       totalClientsServed += patients;

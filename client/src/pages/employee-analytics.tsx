@@ -20,7 +20,7 @@ interface EmployeeAnalytics {
     date: string; 
     clientsServed: number; 
     completedServices: number;
-    serviceDetails: { serviceName: string; patientCount: number }[];
+    serviceDetails: { serviceName: string; patientCount: number; time?: string }[];
   }[];
   totalClientsServed: number;
   totalServices: number;
@@ -202,7 +202,10 @@ export default function EmployeeAnalyticsPage() {
                     <div className="pl-4 space-y-1">
                       {day.serviceDetails.map((service, idx) => (
                         <div key={idx} className="flex items-center justify-between py-1 text-sm">
-                          <span>{service.serviceName}</span>
+                          <span>
+                            {service.time && <span className="text-primary font-medium mr-2">{service.time}</span>}
+                            {service.serviceName}
+                          </span>
                           <span className="text-muted-foreground">{service.patientCount} пац.</span>
                         </div>
                       ))}
