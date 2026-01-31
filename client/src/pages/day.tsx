@@ -351,10 +351,18 @@ function RecordsTab({ date }: { date: string }) {
     queryKey: ["/api/services"],
   });
 
-  const filteredRecords = records.filter(record => {
-    if (selectedService && selectedService !== "all" && record.serviceId !== selectedService) return false;
-    return true;
-  });
+  const filteredRecords = records
+    .filter(record => {
+      if (selectedService && selectedService !== "all" && record.serviceId !== selectedService) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      const aIsPending = a.status === "pending" && (!a.completions || a.completions.length === 0);
+      const bIsPending = b.status === "pending" && (!b.completions || b.completions.length === 0);
+      if (aIsPending && !bIsPending) return -1;
+      if (!aIsPending && bIsPending) return 1;
+      return (a.time || "").localeCompare(b.time || "");
+    });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) =>
@@ -444,6 +452,9 @@ function RecordsTab({ date }: { date: string }) {
                       <h3 className="font-medium text-sm sm:text-base">{record.service.name}</h3>
                       {record.patientCount && record.patientCount > 1 && (
                         <span className="text-xs text-muted-foreground">({record.patientCount} пац.)</span>
+                      )}
+                      {record.time && (
+                        <span className="text-xs text-primary font-medium">{record.time}</span>
                       )}
                       {record.reminder && <Bell className="h-4 w-4 text-primary" />}
                     </div>

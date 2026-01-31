@@ -322,9 +322,17 @@ function RecordsList({ title, records, isLoading, date }: { title: string; recor
             </div>
           ) : (
             <div className="space-y-2">
-              {records.map((record) => (
-                <RecordCard key={record.id} record={record} />
-              ))}
+              {[...records]
+                .sort((a, b) => {
+                  const aIsPending = a.status === "pending" && (!a.completions || a.completions.length === 0);
+                  const bIsPending = b.status === "pending" && (!b.completions || b.completions.length === 0);
+                  if (aIsPending && !bIsPending) return -1;
+                  if (!aIsPending && bIsPending) return 1;
+                  return (a.time || "").localeCompare(b.time || "");
+                })
+                .map((record) => (
+                  <RecordCard key={record.id} record={record} />
+                ))}
             </div>
           )}
         </ScrollArea>
