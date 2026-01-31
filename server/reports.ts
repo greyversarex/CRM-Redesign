@@ -295,7 +295,6 @@ export async function generateExcelReport(
   summarySheet.addRow({ metric: "Итог (прибыль)", value: formatMoney(data.analytics.result) });
   summarySheet.addRow({ metric: "Уникальных клиентов", value: data.analytics.uniqueClients });
   summarySheet.addRow({ metric: "Всего записей", value: data.records.length });
-  summarySheet.addRow({ metric: "Выполненных записей", value: completedRecords.length });
   summarySheet.addRow({ metric: "Всего пациентов обслужено", value: totalPatients });
 
   summarySheet.eachRow((row, rowNumber) => {
@@ -364,12 +363,10 @@ export async function generateExcelReport(
 
   const incomesSheet = workbook.addWorksheet("Доходы по дням");
   incomesSheet.columns = [
-    { header: "Дата", key: "date", width: 12 },
-    { header: "Время", key: "time", width: 10 },
-    { header: "Название", key: "name", width: 35 },
-    { header: "Сумма", key: "amount", width: 15 },
+    { header: "Дата", key: "date", width: 14 },
+    { header: "Описание", key: "name", width: 35 },
     { header: "Сотрудники", key: "employees", width: 25 },
-    { header: "Источник", key: "source", width: 15 },
+    { header: "Сумма", key: "amount", width: 15 },
   ];
 
   incomesSheet.getRow(1).eachCell((cell) => {
@@ -381,11 +378,9 @@ export async function generateExcelReport(
     const dayData = data.dailyIncome[date];
     const dateRow = incomesSheet.addRow({
       date: format(parseISO(date), "dd.MM.yyyy"),
-      time: "",
-      name: `День: ${format(parseISO(date), "EEEE", { locale: ru })}`,
-      amount: formatMoney(dayData.total),
+      name: format(parseISO(date), "EEEE", { locale: ru }),
       employees: "",
-      source: "",
+      amount: formatMoney(dayData.total),
     });
     dateRow.eachCell((cell) => {
       Object.assign(cell, subHeaderStyle);
@@ -393,23 +388,19 @@ export async function generateExcelReport(
 
     dayData.items.forEach((item) => {
       incomesSheet.addRow({
-        date: "",
-        time: item.time || "",
+        date: item.time || "",
         name: item.name,
-        amount: formatMoney(item.amount),
         employees: item.employeeName || "-",
-        source: item.recordId ? "Из записи" : "Вручную",
+        amount: formatMoney(item.amount),
       });
     });
   });
 
   const totalIncomeRow = incomesSheet.addRow({
     date: "",
-    time: "",
     name: "ИТОГО",
-    amount: formatMoney(data.analytics.totalIncome),
     employees: "",
-    source: "",
+    amount: formatMoney(data.analytics.totalIncome),
   });
   totalIncomeRow.eachCell((cell) => {
     Object.assign(cell, totalRowStyle);
@@ -567,7 +558,6 @@ export async function generateExcelReport(
       { header: "#", key: "rank", width: 5 },
       { header: "Сотрудник", key: "name", width: 25 },
       { header: "Пациентов обслужено", key: "patientCount", width: 22 },
-      { header: "Сумма дохода", key: "total", width: 18 },
     ];
 
     employeesSheet.getRow(1).eachCell((cell) => {
@@ -575,15 +565,12 @@ export async function generateExcelReport(
     });
 
     let totalEmployeePatients = 0;
-    let totalEmployeeIncome = 0;
     data.employeeStats.forEach((employee, index) => {
       totalEmployeePatients += employee.patientCount;
-      totalEmployeeIncome += employee.total;
       employeesSheet.addRow({
         rank: index + 1,
         name: employee.name,
         patientCount: employee.patientCount,
-        total: formatMoney(employee.total),
       });
     });
 
@@ -591,7 +578,6 @@ export async function generateExcelReport(
       rank: "",
       name: "ИТОГО",
       patientCount: totalEmployeePatients,
-      total: formatMoney(totalEmployeeIncome),
     });
     totalEmployeeRow.eachCell((cell) => {
       Object.assign(cell, totalRowStyle);
@@ -612,7 +598,6 @@ export async function generateExcelReport(
       { header: "Сотрудник", key: "employee", width: 25 },
       { header: "Услуга", key: "service", width: 30 },
       { header: "Пациентов", key: "patientCount", width: 15 },
-      { header: "Сумма", key: "total", width: 18 },
     ];
 
     detailSheet.getRow(1).eachCell((cell) => {
@@ -624,7 +609,6 @@ export async function generateExcelReport(
         employee: employee.name,
         service: "",
         patientCount: employee.patientCount,
-        total: formatMoney(employee.total),
       });
       employeeHeaderRow.eachCell((cell) => {
         Object.assign(cell, subHeaderStyle);
@@ -635,7 +619,6 @@ export async function generateExcelReport(
           employee: "",
           service: serviceName,
           patientCount: stats.patientCount,
-          total: formatMoney(stats.total),
         });
       });
     });
@@ -821,16 +804,6 @@ export async function generateWordReport(
       new TableRow({
         children: [
           new TableCell({
-            children: [new Paragraph({ text: "Выполненных записей", alignment: AlignmentType.LEFT })],
-          }),
-          new TableCell({
-            children: [new Paragraph({ text: String(completedRecords.length), alignment: AlignmentType.RIGHT })],
-          }),
-        ],
-      }),
-      new TableRow({
-        children: [
-          new TableCell({
             children: [new Paragraph({ text: "Всего пациентов обслужено", alignment: AlignmentType.LEFT })],
           }),
           new TableCell({
@@ -917,7 +890,6 @@ export async function generateWordReport(
       new TableRow({
         children: [
           new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Дата", bold: true })] })] }),
-          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Время", bold: true })] })] }),
           new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Описание", bold: true })] })] }),
           new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Сотрудники", bold: true })] })] }),
           new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Сумма", bold: true })] })] }),
@@ -931,7 +903,6 @@ export async function generateWordReport(
         new TableRow({
           children: [
             new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: format(parseISO(date), "dd.MM.yyyy"), bold: true })] })] }),
-            new TableCell({ children: [new Paragraph({ text: "" })] }),
             new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: format(parseISO(date), "EEEE", { locale: ru }), bold: true })] })] }),
             new TableCell({ children: [new Paragraph({ text: "" })] }),
             new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatMoney(dayData.total), bold: true })] })] }),
@@ -942,7 +913,6 @@ export async function generateWordReport(
         incomeRows.push(
           new TableRow({
             children: [
-              new TableCell({ children: [new Paragraph({ text: "" })] }),
               new TableCell({ children: [new Paragraph({ text: item.time || "" })] }),
               new TableCell({ children: [new Paragraph({ text: item.name })] }),
               new TableCell({ children: [new Paragraph({ text: item.employeeName || "-" })] }),
@@ -956,7 +926,6 @@ export async function generateWordReport(
     incomeRows.push(
       new TableRow({
         children: [
-          new TableCell({ children: [new Paragraph({ text: "" })] }),
           new TableCell({ children: [new Paragraph({ text: "" })] }),
           new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "ИТОГО", bold: true })] })] }),
           new TableCell({ children: [new Paragraph({ text: "" })] }),
@@ -1141,7 +1110,7 @@ export async function generateWordReport(
     data.employeeStats.forEach((employee, index) => {
       sections.push(
         new Paragraph({
-          text: `${index + 1}. ${employee.name} - ${formatMoney(employee.total)} (${employee.patientCount} пациентов)`,
+          text: `${index + 1}. ${employee.name} (${employee.patientCount} пациентов)`,
           spacing: { before: 100, after: 50 },
         })
       );
@@ -1151,7 +1120,6 @@ export async function generateWordReport(
           children: [
             new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Услуга", bold: true })] })] }),
             new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Пациентов", bold: true })] })] }),
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Сумма", bold: true })] })] }),
           ],
         }),
       ];
@@ -1162,7 +1130,6 @@ export async function generateWordReport(
             children: [
               new TableCell({ children: [new Paragraph({ text: serviceName })] }),
               new TableCell({ children: [new Paragraph({ text: String(stats.patientCount) })] }),
-              new TableCell({ children: [new Paragraph({ text: formatMoney(stats.total) })] }),
             ],
           })
         );
