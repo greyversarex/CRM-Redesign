@@ -600,12 +600,13 @@ export class DatabaseStorage implements IStorage {
     );
 
     // Get employee stats from recordCompletions table
-    // Employee revenue = price × their completion's patientCount (shows their individual contribution)
+    // Revenue = price × RECORD's patientCount (NOT completion's patientCount)
     const completionsData = await db
       .select({
         completionId: recordCompletions.id,
         employeeId: recordCompletions.employeeId,
-        completionPatientCount: recordCompletions.patientCount,
+        recordId: recordCompletions.recordId,
+        recordPatientCount: records.patientCount,
         recordDate: records.date,
         servicePrice: services.price,
         employeeName: users.fullName,
@@ -621,6 +622,8 @@ export class DatabaseStorage implements IStorage {
         )
       );
 
+    // Track which records have been counted to avoid double-counting
+    const countedRecords = new Set<string>();
     const employeeMap = new Map<string, { fullName: string; completedServices: number; revenue: number }>();
     
     for (const row of completionsData) {
@@ -630,8 +633,13 @@ export class DatabaseStorage implements IStorage {
         revenue: 0,
       };
       existing.completedServices += 1;
-      // Revenue = price × patients they serviced (their contribution)
-      existing.revenue += (row.servicePrice || 0) * (row.completionPatientCount || 1);
+      
+      // Revenue = price × record.patientCount, counted only ONCE per record
+      if (!countedRecords.has(row.recordId)) {
+        existing.revenue += (row.servicePrice || 0) * (row.recordPatientCount || 1);
+        countedRecords.add(row.recordId);
+      }
+      
       employeeMap.set(row.employeeId, existing);
     }
 
@@ -830,11 +838,10 @@ export class DatabaseStorage implements IStorage {
     totalPatients: number;
     byService: { serviceId: string; serviceName: string; patientCount: number; revenue: number }[];
   }> {
-    const conditions = [eq(recordCompletions.employeeId, employeeId)];
-    
     let query = db
       .select({
-        patientCount: recordCompletions.patientCount,
+        recordId: recordCompletions.recordId,
+        recordPatientCount: records.patientCount,
         serviceId: records.serviceId,
         serviceName: services.name,
         servicePrice: services.price,
@@ -855,22 +862,28 @@ export class DatabaseStorage implements IStorage {
       return true;
     });
 
-    // Calculate totals
+    // Calculate totals - revenue = price × RECORD's patientCount
     let totalPatients = 0;
     const serviceMap = new Map<string, { serviceName: string; patientCount: number; revenue: number }>();
+    const countedRecords = new Set<string>();
 
     for (const row of filteredResult) {
-      if (!row.serviceId || !row.serviceName) continue;
+      if (!row.serviceId || !row.serviceName || !row.recordId) continue;
       
-      totalPatients += row.patientCount;
+      // Only count each record once
+      if (countedRecords.has(row.recordId)) continue;
+      countedRecords.add(row.recordId);
+      
+      const recordPatients = row.recordPatientCount || 1;
+      totalPatients += recordPatients;
       
       const existing = serviceMap.get(row.serviceId) || {
         serviceName: row.serviceName,
         patientCount: 0,
         revenue: 0,
       };
-      existing.patientCount += row.patientCount;
-      existing.revenue += (row.servicePrice || 0) * row.patientCount;
+      existing.patientCount += recordPatients;
+      existing.revenue += (row.servicePrice || 0) * recordPatients;
       serviceMap.set(row.serviceId, existing);
     }
 
