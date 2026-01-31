@@ -135,67 +135,7 @@ export default function AnalyticsIncomePage() {
           <Skeleton className="h-64" />
         </div>
       ) : (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card>
-              <CardContent className="p-6">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-xl">
-                      <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Общий доход за месяц</p>
-                      <p className="text-3xl font-bold text-green-600">{data?.totalIncome || 0} с</p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 pt-2 border-t">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                        <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Записей</p>
-                        <p className="text-lg font-semibold">{data?.recordCount || 0}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                        <Users className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Клиентов</p>
-                        <p className="text-lg font-semibold">{data?.clientCount || 0}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Доход по услугам</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {serviceList.length > 0 ? (
-                  <div className="space-y-3">
-                    {serviceList.map(([serviceName, amount]) => (
-                      <div key={serviceName} className="flex items-center justify-between">
-                        <span className="text-sm">{serviceName}</span>
-                        <span className="font-medium text-green-600">{amount} с</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center h-[100px] text-muted-foreground">
-                    Нет данных
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-2">
               <CardTitle>Доходы по дням</CardTitle>
@@ -311,7 +251,67 @@ export default function AnalyticsIncomePage() {
               )}
             </CardContent>
           </Card>
-        </>
+
+          <div className="space-y-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Доход по услугам</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {serviceList.length > 0 ? (
+                  <div className="space-y-3">
+                    {serviceList.map(([serviceName, amount]) => (
+                      <div key={serviceName} className="flex items-center justify-between">
+                        <span className="text-sm">{serviceName}</span>
+                        <span className="font-medium text-green-600">{amount} с</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-[100px] text-muted-foreground">
+                    Нет данных
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-xl">
+                      <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Общий доход за месяц</p>
+                      <p className="text-3xl font-bold text-green-600">{data?.totalIncome || 0} с</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 pt-2 border-t">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                        <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Записей</p>
+                        <p className="text-lg font-semibold">{data?.recordCount || 0}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                        <Users className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Клиентов</p>
+                        <p className="text-lg font-semibold">{data?.clientCount || 0}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       )}
     </div>
   );
