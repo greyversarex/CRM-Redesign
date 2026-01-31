@@ -1,0 +1,40 @@
+root@6382113-xn198673:/var/www/CRM-Redesign# pm2 logs
+[TAILING] Tailing last 15 lines for [all] processes (change the value with --lines option)
+/root/.pm2/pm2.log last 15 lines:
+PM2        | 2026-01-29T20:59:05: PM2 log: Stopping app:usistem id:0
+PM2        | 2026-01-29T20:59:05: PM2 log: App [usistem:0] exited with code [0] via signal [SIGINT]
+PM2        | 2026-01-29T20:59:05: PM2 log: pid=582898 msg=process killed
+PM2        | 2026-01-29T20:59:05: PM2 log: App [usistem:0] starting in -fork mode-
+PM2        | 2026-01-29T20:59:05: PM2 log: App [usistem:0] online
+PM2        | 2026-01-29T21:09:22: PM2 log: Stopping app:usistem id:0
+PM2        | 2026-01-29T21:09:22: PM2 log: App [usistem:0] exited with code [0] via signal [SIGINT]
+PM2        | 2026-01-29T21:09:22: PM2 log: pid=612923 msg=process killed
+PM2        | 2026-01-29T21:09:22: PM2 log: App [usistem:0] starting in -fork mode-
+PM2        | 2026-01-29T21:09:22: PM2 log: App [usistem:0] online
+PM2        | 2026-01-31T19:35:56: PM2 log: Stopping app:usistem id:0
+PM2        | 2026-01-31T19:35:56: PM2 log: App [usistem:0] exited with code [0] via signal [SIGINT]
+PM2        | 2026-01-31T19:35:56: PM2 log: pid=613902 msg=process killed
+PM2        | 2026-01-31T19:35:56: PM2 log: App [usistem:0] starting in -fork mode-
+PM2        | 2026-01-31T19:35:57: PM2 log: App [usistem:0] online
+
+/root/.pm2/logs/usistem-error.log last 15 lines:
+0|usistem  |   detail: undefined,
+0|usistem  |   hint: undefined,
+0|usistem  |   position: '152',
+0|usistem  |   internalPosition: undefined,
+0|usistem  |   internalQuery: undefined,
+0|usistem  |   where: undefined,
+0|usistem  |   schema: undefined,
+0|usistem  |   table: undefined,
+0|usistem  |   column: undefined,
+0|usistem  |   dataType: undefined,
+0|usistem  |   constraint: undefined,
+0|usistem  |   file: 'parse_relation.c',
+0|usistem  |   line: '3722',
+0|usistem  |   routine: 'errorMissingColumn'
+0|usistem  | }
+
+/root/.pm2/logs/usistem-out.log last 15 lines:
+0|usistem  | 156"},{"id":"67d8644b-662e-4dfe-b460-16103e6003c2","fullName":"Аҳмад ака","phone":"902013024"},{"id":"b02c6346-4b24-4f40-a8ab-48ed490e939e","fullName":"Амирдин","phone":"938383839"},{"id":"4da13c22-5db8-47fb-bb4f-02e63a969acf","fullName":"Умар ","phone":"981017888"},{"id":"683c51cb-2f8f-462c-b711-ec7af5eaeb70","fullName":"Акаи шамшод","phone":"900616485"},{"id":"da56d45e-7e2d-47c4-9015-d2045047c5f7","fullName":"Салмон ","phone":"501892997"},{"id":"b6c90809-01c0-4508-952d-70d30af9fe6c","fullName":"Диловар ","phone":"901261010"},{"id":"425c4a3c-5172-4940-a3cd-9ad6eb2a37d9","fullName":"Воҳид","phone":"7837384838"},{"id":"8022dcac-9a9a-46d2-90d4-7afdb2d97c0a","fullName":"Бобом ","phone":"9221300033"},{"id":"d37715c2-2c64-4c40-852b-4bb45e1439f3","fullName":"Икматуло","phone":"911100706"},{"id":"d8bcd59d-91f1-49ce-ba3c-cb0f8d0f5792","fullName":"Хайдар","phone":"005888391"},{"id":"163e4f60-c63e-4bba-accf-f9fd8603bc18","fullName":"Тоир","phone":"077819898"},{"id":"da55eca0-454a-4721-b9cb-066b117d464e","fullName":"Зафар ","phone":"900006300"},{"id":"160a5226-5cb5-4095-8686-7f305c843b0c","fullName":"Муҳсин","phone":"939391236"},{"id":"f295297c-cd67-471f-b7d2-99cd4bf138cc","fullName":"Эмомали ","phone":"907444484"},{"id":"f6747dcd-1719-4a56-8b83-2e10ad9a77e2","fullName":"Муҳаммадҷон","phone":"882207070"},{"id":"75c9cad6-f4f1-4847-a189-88ee0ddda40a","fullName":"Шокир ","phone":"988200484"},{"id":"5575cfd7-f598-4349-8b9e-93b4e31a3edd","fullName":"Мавзуна","phone":"900360019"},{"id":"6d9a2cff-73a3-4c48-b525-995822c357ea","fullName":"Сафия","phone":"113380290"},{"id":"bbb91426-699f-49b5-ad8c-2cc46da43f02","fullName":"Тоир","phone":"077819898"},{"id":"01f421b3-3d40-405a-a0da-bb33feecb711","fullName":"Мархабо ","phone":"975199797"},{"id":"923bb929-4d3d-43f6-8356-ff4f33348b38","fullName":"Парвиз","phone":"001009401"},{"id":"b2df1e83-6fe1-42c6-a65e-233b4b6ab5af","fullName":"Убайдулло","phone":"904081220"},{"id":"f1d52599-ccf0-46a1-957f-ee3b41d6685c","fullName":"Алишервон ","phone":"904460034"},{"id":"38d7f917-98a8-4897-8e2a-194293f3ea1b","fullName":"Бехруз ","phone":"944432002"},{"id":"b3a00f9f-1508-440b-a729-15888b791039","fullName":"hayom","phone":"900900900"},{"id":"f0512fa1-4f7a-4af2-8934-320377e260fb","fullName":"Садрддин ","phone":"918141559"},{"id":"205095e7-7b33-4a8b-83b8-8724424d204c","fullName":"Ащурбек","phone":"900900900"},{"id":"263de257-4b28-4cf3-b126-4b82504fd10f","fullName":"Ррпррор","phone":"0000 0000 88"},{"id":"4a31366d-6963-4123-9cf7-e84ae23292ff","fullName":"Абдукосим ","phone":"200848569"},{"id":"6c9bcfb3-c911-4c2b-a99c-b54f0ceb6dfb","fullName":"Искандар ","phone":"186810000"}]
+0|usistem  | 7:42:15 PM [express] POST /api/records 500 in 33ms :: {"error":"Internal server error"}
+0|usistem  | 7:42:27 PM [express] POST /api/records 500 in 29ms :: {"error":"Internal server error"}
