@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { format, startOfMonth, endOfMonth, subMonths, addMonths, startOfYear, endOfYear, startOfDay, endOfDay } from "date-fns";
+import { format, startOfMonth, endOfMonth, subMonths, addMonths, startOfYear, endOfYear, startOfDay, endOfDay, parseISO } from "date-fns";
 import { ru } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, DollarSign, Users, Download, FileSpreadsheet, FileText, Loader2 } from "lucide-react";
+import { Calendar as CalendarIcon, TrendingUp, TrendingDown, DollarSign, Users, Download, FileSpreadsheet, FileText, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -11,6 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 
 interface MonthlyAnalytics {
   totalIncome: number;
@@ -27,39 +29,61 @@ interface MonthlyAnalytics {
 
 export default function AnalyticsPage() {
   const [, setLocation] = useLocation();
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [startDate, setStartDate] = useState<Date>(startOfMonth(new Date()));
+  const [endDate, setEndDate] = useState<Date>(endOfMonth(new Date()));
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
-  const [exportPeriod, setExportPeriod] = useState<"day" | "month" | "year">("month");
   const [exportFormat, setExportFormat] = useState<"excel" | "word">("excel");
   const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
   
-  const monthStart = format(startOfMonth(currentMonth), "yyyy-MM-dd");
-  const monthEnd = format(endOfMonth(currentMonth), "yyyy-MM-dd");
+  const startStr = format(startDate, "yyyy-MM-dd");
+  const endStr = format(endDate, "yyyy-MM-dd");
 
   const { data: analytics, isLoading } = useQuery<MonthlyAnalytics>({
-    queryKey: ["/api/analytics/month", { start: monthStart, end: monthEnd }],
+    queryKey: ["/api/analytics/month", { start: startStr, end: endStr }],
   });
+  
+  const setThisMonth = () => {
+    setStartDate(startOfMonth(new Date()));
+    setEndDate(endOfMonth(new Date()));
+  };
+  
+  const setLastMonth = () => {
+    const last = subMonths(new Date(), 1);
+    setStartDate(startOfMonth(last));
+    setEndDate(endOfMonth(last));
+  };
+  
+  const setThisYear = () => {
+    setStartDate(startOfYear(new Date()));
+    setEndDate(endOfYear(new Date()));
+  };
+  
+  const handleStartDateChange = (date: Date | undefined) => {
+    if (!date) return;
+    setStartDate(date);
+    if (date > endDate) {
+      setEndDate(date);
+    }
+  };
+  
+  const handleEndDateChange = (date: Date | undefined) => {
+    if (!date) return;
+    setEndDate(date);
+    if (date < startDate) {
+      setStartDate(date);
+    }
+  };
 
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      let start: string, end: string;
-      
-      if (exportPeriod === "day") {
-        const dayStr = format(currentMonth, "yyyy-MM-dd");
-        start = dayStr;
-        end = dayStr;
-      } else if (exportPeriod === "month") {
-        start = format(startOfMonth(currentMonth), "yyyy-MM-dd");
-        end = format(endOfMonth(currentMonth), "yyyy-MM-dd");
-      } else {
-        start = format(startOfYear(currentMonth), "yyyy-MM-dd");
-        end = format(endOfYear(currentMonth), "yyyy-MM-dd");
-      }
+      const start = startStr;
+      const end = endStr;
+      const periodType = startStr === endStr ? "day" : "month";
 
       const endpoint = exportFormat === "excel" ? "/api/reports/excel" : "/api/reports/word";
-      const response = await fetch(`${endpoint}?start=${start}&end=${end}&period=${exportPeriod}`, {
+      const response = await fetch(`${endpoint}?start=${start}&end=${end}&period=${periodType}`, {
         credentials: "include",
       });
 
@@ -90,9 +114,9 @@ export default function AnalyticsPage() {
 
   return (
     <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-        <h1 className="text-2xl sm:text-3xl font-bold" data-testid="text-analytics-title">Аналитика</h1>
-        <div className="flex items-center gap-2 sm:gap-3">
+      <div className="flex flex-col gap-3 sm:gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <h1 className="text-2xl sm:text-3xl font-bold" data-testid="text-analytics-title">Аналитика</h1>
           <Dialog open={isExportDialogOpen} onOpenChange={setIsExportDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" data-testid="button-export-report">
@@ -106,19 +130,6 @@ export default function AnalyticsPage() {
                 <DialogTitle>Скачать отчёт</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 pt-4">
-                <div className="space-y-2">
-                  <Label>Период</Label>
-                  <Select value={exportPeriod} onValueChange={(v) => setExportPeriod(v as any)}>
-                    <SelectTrigger data-testid="select-export-period">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="day">Текущий день ({format(currentMonth, "d MMMM yyyy", { locale: ru })})</SelectItem>
-                      <SelectItem value="month">Текущий месяц ({format(currentMonth, "LLLL yyyy", { locale: ru })})</SelectItem>
-                      <SelectItem value="year">Текущий год ({format(currentMonth, "yyyy")})</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
                 <div className="space-y-2">
                   <Label>Формат</Label>
                   <div className="grid grid-cols-2 gap-3">
@@ -144,6 +155,9 @@ export default function AnalyticsPage() {
                     </Button>
                   </div>
                 </div>
+                <p className="text-sm text-muted-foreground">
+                  Период: {format(startDate, "d MMM yyyy", { locale: ru })} — {format(endDate, "d MMM yyyy", { locale: ru })}
+                </p>
                 <Button 
                   className="w-full" 
                   onClick={handleExport}
@@ -165,25 +179,57 @@ export default function AnalyticsPage() {
               </div>
             </DialogContent>
           </Dialog>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-            data-testid="button-prev-month"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <div className="min-w-[120px] sm:w-40 text-center text-sm sm:text-base font-medium capitalize">
-            {format(currentMonth, "LLLL yyyy", { locale: ru })}
+        </div>
+        
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="justify-start text-left font-normal" data-testid="button-start-date">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {format(startDate, "d MMM yyyy", { locale: ru })}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={startDate}
+                  onSelect={handleStartDateChange}
+                  locale={ru}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            <span className="text-muted-foreground">—</span>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="justify-start text-left font-normal" data-testid="button-end-date">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {format(endDate, "d MMM yyyy", { locale: ru })}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={endDate}
+                  onSelect={handleEndDateChange}
+                  locale={ru}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           </div>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-            data-testid="button-next-month"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="secondary" size="sm" onClick={setThisMonth} data-testid="button-this-month">
+              Этот месяц
+            </Button>
+            <Button variant="secondary" size="sm" onClick={setLastMonth} data-testid="button-last-month">
+              Прошлый месяц
+            </Button>
+            <Button variant="secondary" size="sm" onClick={setThisYear} data-testid="button-this-year">
+              Этот год
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -239,7 +285,7 @@ export default function AnalyticsPage() {
                     <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Итог месяца</p>
+                    <p className="text-sm text-muted-foreground">Итог периода</p>
                     <p className={`text-xl sm:text-2xl font-bold ${(analytics?.result || 0) >= 0 ? "text-green-600" : "text-red-600"}`}>
                       {(analytics?.result || 0) >= 0 ? "+" : ""}{analytics?.result || 0}
                     </p>

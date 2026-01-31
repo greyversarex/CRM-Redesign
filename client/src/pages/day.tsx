@@ -752,15 +752,18 @@ function AnalyticsTab({ date }: { date: string }) {
       record.completions.forEach(completion => {
         if (!completion.employee) return;
         const empId = completion.employee.id;
+        const serviceName = record.service?.name || "Неизвестная услуга";
         if (!acc[empId]) {
-          acc[empId] = { name: completion.employee.fullName, clients: 0, services: 0 };
+          acc[empId] = { name: completion.employee.fullName, services: {} };
         }
-        acc[empId].clients += completion.patientCount || 1;
-        acc[empId].services += 1;
+        if (!acc[empId].services[serviceName]) {
+          acc[empId].services[serviceName] = 0;
+        }
+        acc[empId].services[serviceName] += completion.patientCount || 1;
       });
     }
     return acc;
-  }, {} as Record<string, { name: string; clients: number; services: number }>);
+  }, {} as Record<string, { name: string; services: Record<string, number> }>);
 
   return (
     <div className="space-y-6">
@@ -880,20 +883,20 @@ function AnalyticsTab({ date }: { date: string }) {
               <TableHeader>
                 <TableRow>
                   <TableHead>Сотрудник</TableHead>
-                  <TableHead className="text-center">Клиентов</TableHead>
-                  <TableHead className="text-right">Услуг</TableHead>
+                  <TableHead>Услуга</TableHead>
+                  <TableHead className="text-right">Пациентов</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {Object.entries(employeeStats).map(([empId, stats]) => (
-                  <TableRow key={empId}>
-                    <TableCell className="font-medium">{stats.name}</TableCell>
-                    <TableCell className="text-center">{stats.clients}</TableCell>
-                    <TableCell className="text-right font-medium">
-                      {stats.services}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {Object.entries(employeeStats).map(([empId, stats]) => 
+                  Object.entries(stats.services).map(([serviceName, patientCount], idx) => (
+                    <TableRow key={`${empId}-${serviceName}`}>
+                      <TableCell className="font-medium">{idx === 0 ? stats.name : ""}</TableCell>
+                      <TableCell>{serviceName}</TableCell>
+                      <TableCell className="text-right font-medium">{patientCount}</TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           )}
