@@ -456,6 +456,7 @@ export class DatabaseStorage implements IStorage {
       .select({
         id: incomes.id,
         date: incomes.date,
+        time: incomes.time,
         name: incomes.name,
         amount: incomes.amount,
         recordId: incomes.recordId,

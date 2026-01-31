@@ -326,9 +326,10 @@ export async function generateExcelReport(
     });
 
     dayData.items.forEach((item) => {
+      const timePrefix = item.time ? `${item.time} - ` : "";
       incomesSheet.addRow({
         date: "",
-        name: item.name,
+        name: timePrefix + item.name,
         amount: formatMoney(item.amount),
         source: item.recordId ? "Из записи" : "Вручную",
       });
@@ -697,11 +698,12 @@ export async function generateWordReport(
         })
       );
       dayData.items.forEach((item) => {
+        const timePrefix = item.time ? `${item.time} - ` : "";
         incomeRows.push(
           new TableRow({
             children: [
               new TableCell({ children: [new Paragraph({ text: "" })] }),
-              new TableCell({ children: [new Paragraph({ text: item.name })] }),
+              new TableCell({ children: [new Paragraph({ text: timePrefix + item.name })] }),
               new TableCell({ children: [new Paragraph({ text: formatMoney(item.amount) })] }),
             ],
           })
