@@ -356,9 +356,28 @@ export async function registerRoutes(
         return res.status(404).json({ error: "Record not found" });
       }
 
-      // Just update the record, income is created when completion is added
-      const record = await storage.updateRecord(req.params.id, req.body);
-      res.json(record);
+      await storage.updateRecord(req.params.id, req.body);
+
+      // If status changed to "done", create income if not exists
+      if (req.body.status === "done" && existingRecord.status !== "done") {
+        const existingIncomes = await storage.getIncomesByRecordId(existingRecord.id);
+        if (existingIncomes.length === 0) {
+          const recordPatientCount = existingRecord.patientCount || 1;
+          const totalIncome = existingRecord.service.price * recordPatientCount;
+          await storage.createIncome({
+            date: existingRecord.date,
+            time: existingRecord.time || undefined,
+            name: `${existingRecord.service.name} (${recordPatientCount} пац.)`,
+            amount: totalIncome,
+            recordId: existingRecord.id,
+            reminder: false,
+          });
+        }
+      }
+
+      // Return updated record with joins
+      const updatedRecord = await storage.getRecord(req.params.id);
+      res.json(updatedRecord);
     } catch (error) {
       res.status(500).json({ error: "Internal server error" });
     }
