@@ -467,17 +467,50 @@ export class DatabaseStorage implements IStorage {
         recordId: incomes.recordId,
         reminder: incomes.reminder,
         serviceName: services.name,
-        employeeName: users.fullName,
       })
       .from(incomes)
       .leftJoin(records, eq(incomes.recordId, records.id))
       .leftJoin(services, eq(records.serviceId, services.id))
-      .leftJoin(users, eq(records.employeeId, users.id))
       .where(and(gte(incomes.date, startDate), lte(incomes.date, endDate)));
 
-    // Group by date
-    const byDate: Record<string, typeof monthIncomes> = {};
+    // For each income with a recordId, get employee names from recordCompletions
+    const incomeWithEmployees: {
+      id: string;
+      date: string;
+      time: string | null;
+      name: string;
+      amount: number;
+      recordId: string | null;
+      reminder: boolean;
+      serviceName: string | null;
+      employeeName: string | null;
+    }[] = [];
+
     for (const income of monthIncomes) {
+      let employeeName: string | null = null;
+      
+      if (income.recordId) {
+        // Get all employees who completed this record
+        const completions = await db
+          .select({ employeeName: users.fullName })
+          .from(recordCompletions)
+          .innerJoin(users, eq(recordCompletions.employeeId, users.id))
+          .where(eq(recordCompletions.recordId, income.recordId));
+        
+        if (completions.length > 0) {
+          employeeName = completions.map(c => c.employeeName).join(", ");
+        }
+      }
+      
+      incomeWithEmployees.push({
+        ...income,
+        employeeName,
+      });
+    }
+
+    // Group by date
+    const byDate: Record<string, typeof incomeWithEmployees> = {};
+    for (const income of incomeWithEmployees) {
       if (!byDate[income.date]) {
         byDate[income.date] = [];
       }
@@ -486,12 +519,12 @@ export class DatabaseStorage implements IStorage {
 
     // Group by service for chart
     const byService: Record<string, number> = {};
-    for (const income of monthIncomes) {
+    for (const income of incomeWithEmployees) {
       const serviceName = income.serviceName || income.name;
       byService[serviceName] = (byService[serviceName] || 0) + income.amount;
     }
 
-    const totalIncome = monthIncomes.reduce((sum, i) => sum + i.amount, 0);
+    const totalIncome = incomeWithEmployees.reduce((sum, i) => sum + i.amount, 0);
 
     return {
       byDate,
