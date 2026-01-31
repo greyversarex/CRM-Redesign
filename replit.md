@@ -10,6 +10,17 @@ A CRM system for managing clients, services, appointments, and finances with cal
 
 ## Recent Changes (January 2026)
 
+### Analytics & Day Page Improvements
+- **Configurable date range**: Analytics page now has start/end date pickers with calendar controls
+- **Quick presets**: Added buttons for "This month", "Last month", "This year"
+- **Date validation**: Auto-swaps dates if start > end
+- **Employee stats redesigned**: Day page "Сотрудники за день" now shows employee name, service name, and patient count per service
+
+### Report Improvements
+- Removed "Выполненных записей" from summary statistics
+- Removed "Сумма" column from employee statistics
+- Combined Date/Time columns in income tables
+
 ### Record Management Features
 - **Edit records**: Admins and managers can edit existing records (client, service, date, time, patient count)
 - **Delete records**: Admins and managers can delete records
