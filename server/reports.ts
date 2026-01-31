@@ -18,6 +18,16 @@ import { ru } from "date-fns/locale";
 
 const CURRENCY = "с.";
 
+interface CompletionDetail {
+  employeeId: string;
+  employeeName: string;
+  patientCount: number;
+  serviceName: string;
+  servicePrice: number;
+  recordDate: string;
+  recordTime: string;
+}
+
 interface ReportData {
   records: any[];
   incomes: any[];
@@ -35,9 +45,10 @@ interface ReportData {
   };
   dailyIncome: Record<string, { total: number; items: any[] }>;
   dailyExpense: Record<string, { total: number; items: any[] }>;
-  clientStats: { clientId: number; name: string; phone: string; total: number; count: number }[];
-  serviceStats: { serviceId: number; name: string; total: number; count: number }[];
-  employeeStats: { employeeId: number; name: string; total: number; count: number; services: Record<string, { total: number; count: number }> }[];
+  clientStats: { clientId: string; name: string; phone: string; total: number; count: number; patientCount: number }[];
+  serviceStats: { serviceId: string; name: string; total: number; count: number; patientCount: number }[];
+  employeeStats: { employeeId: string; name: string; total: number; patientCount: number; services: Record<string, { total: number; patientCount: number }> }[];
+  completionDetails: CompletionDetail[];
 }
 
 async function getReportData(
@@ -74,25 +85,30 @@ async function getReportData(
     });
   });
 
-  const clientMap = new Map<number, { name: string; phone: string; total: number; count: number }>();
-  const serviceMap = new Map<number, { name: string; total: number; count: number }>();
-  const employeeMap = new Map<number, { name: string; total: number; count: number; services: Record<string, { total: number; count: number }> }>();
+  const clientMap = new Map<string, { name: string; phone: string; total: number; count: number; patientCount: number }>();
+  const serviceMap = new Map<string, { name: string; total: number; count: number; patientCount: number }>();
+  const employeeMap = new Map<string, { name: string; total: number; patientCount: number; services: Record<string, { total: number; patientCount: number }> }>();
+  const completionDetails: CompletionDetail[] = [];
 
   records.forEach((record: any) => {
     if (record.status === "done" && record.service?.price) {
       const price = record.service.price;
-      
+      const patientCount = record.patientCount || 1;
+      const recordTotal = price * patientCount;
+
       if (record.clientId && record.client) {
         const existing = clientMap.get(record.clientId);
         if (existing) {
-          existing.total += price;
+          existing.total += recordTotal;
           existing.count += 1;
+          existing.patientCount += patientCount;
         } else {
           clientMap.set(record.clientId, {
             name: record.client.fullName,
             phone: record.client.phone || "",
-            total: price,
+            total: recordTotal,
             count: 1,
+            patientCount: patientCount,
           });
         }
       }
@@ -100,37 +116,56 @@ async function getReportData(
       if (record.serviceId && record.service) {
         const existing = serviceMap.get(record.serviceId);
         if (existing) {
-          existing.total += price;
+          existing.total += recordTotal;
           existing.count += 1;
+          existing.patientCount += patientCount;
         } else {
           serviceMap.set(record.serviceId, {
             name: record.service.name,
-            total: price,
+            total: recordTotal,
             count: 1,
+            patientCount: patientCount,
           });
         }
       }
 
-      if (record.employeeId && record.employee) {
-        const existing = employeeMap.get(record.employeeId);
-        const serviceName = record.service?.name || "Неизвестно";
-        if (existing) {
-          existing.total += price;
-          existing.count += 1;
-          if (existing.services[serviceName]) {
-            existing.services[serviceName].total += price;
-            existing.services[serviceName].count += 1;
-          } else {
-            existing.services[serviceName] = { total: price, count: 1 };
-          }
-        } else {
-          employeeMap.set(record.employeeId, {
-            name: record.employee.fullName,
-            total: price,
-            count: 1,
-            services: { [serviceName]: { total: price, count: 1 } },
+      if (record.completions && record.completions.length > 0) {
+        record.completions.forEach((completion: any) => {
+          const employeeId = completion.employeeId;
+          const employeeName = completion.employee?.fullName || "Неизвестно";
+          const completionPatientCount = completion.patientCount || 1;
+          const completionTotal = price * completionPatientCount;
+          const serviceName = record.service?.name || "Неизвестно";
+
+          completionDetails.push({
+            employeeId,
+            employeeName,
+            patientCount: completionPatientCount,
+            serviceName,
+            servicePrice: price,
+            recordDate: record.date,
+            recordTime: record.time,
           });
-        }
+
+          const existing = employeeMap.get(employeeId);
+          if (existing) {
+            existing.total += completionTotal;
+            existing.patientCount += completionPatientCount;
+            if (existing.services[serviceName]) {
+              existing.services[serviceName].total += completionTotal;
+              existing.services[serviceName].patientCount += completionPatientCount;
+            } else {
+              existing.services[serviceName] = { total: completionTotal, patientCount: completionPatientCount };
+            }
+          } else {
+            employeeMap.set(employeeId, {
+              name: employeeName,
+              total: completionTotal,
+              patientCount: completionPatientCount,
+              services: { [serviceName]: { total: completionTotal, patientCount: completionPatientCount } },
+            });
+          }
+        });
       }
     }
   });
@@ -167,6 +202,7 @@ async function getReportData(
     clientStats,
     serviceStats,
     employeeStats,
+    completionDetails,
   };
 }
 
@@ -228,10 +264,21 @@ export async function generateExcelReport(
     alignment: { vertical: "middle" },
   };
 
+  const totalRowStyle: Partial<ExcelJS.Style> = {
+    font: { bold: true },
+    fill: { type: "pattern", pattern: "solid", fgColor: { argb: "FFE2EFDA" } },
+    border: {
+      top: { style: "thin" },
+      left: { style: "thin" },
+      bottom: { style: "thin" },
+      right: { style: "thin" },
+    },
+  };
+
   const summarySheet = workbook.addWorksheet("Сводка");
   summarySheet.columns = [
-    { header: "Показатель", key: "metric", width: 25 },
-    { header: "Значение", key: "value", width: 20 },
+    { header: "Показатель", key: "metric", width: 30 },
+    { header: "Значение", key: "value", width: 25 },
   ];
 
   summarySheet.getRow(1).eachCell((cell) => {
@@ -239,12 +286,17 @@ export async function generateExcelReport(
   });
 
   const periodTitle = formatPeriodTitle(data);
+  const completedRecords = data.records.filter(r => r.status === "done");
+  const totalPatients = completedRecords.reduce((sum, r) => sum + (r.patientCount || 1), 0);
+
   summarySheet.addRow({ metric: "Период", value: periodTitle });
   summarySheet.addRow({ metric: "Общий доход", value: formatMoney(data.analytics.totalIncome) });
   summarySheet.addRow({ metric: "Общий расход", value: formatMoney(data.analytics.totalExpense) });
-  summarySheet.addRow({ metric: "Итог", value: formatMoney(data.analytics.result) });
+  summarySheet.addRow({ metric: "Итог (прибыль)", value: formatMoney(data.analytics.result) });
   summarySheet.addRow({ metric: "Уникальных клиентов", value: data.analytics.uniqueClients });
   summarySheet.addRow({ metric: "Всего записей", value: data.records.length });
+  summarySheet.addRow({ metric: "Выполненных записей", value: completedRecords.length });
+  summarySheet.addRow({ metric: "Всего пациентов обслужено", value: totalPatients });
 
   summarySheet.eachRow((row, rowNumber) => {
     if (rowNumber > 1) {
@@ -254,6 +306,13 @@ export async function generateExcelReport(
     }
   });
 
+  const statusMap: Record<string, string> = {
+    pending: "Ожидает",
+    confirmed: "Подтверждено",
+    done: "Выполнено",
+    cancelled: "Отменено",
+  };
+
   if (data.records.length > 0) {
     const recordsSheet = workbook.addWorksheet("Записи");
     recordsSheet.columns = [
@@ -262,8 +321,10 @@ export async function generateExcelReport(
       { header: "Клиент", key: "client", width: 25 },
       { header: "Телефон", key: "phone", width: 15 },
       { header: "Услуга", key: "service", width: 25 },
-      { header: "Сумма", key: "price", width: 12 },
-      { header: "Сотрудник", key: "employee", width: 20 },
+      { header: "Цена услуги", key: "price", width: 12 },
+      { header: "Кол-во пациентов", key: "patientCount", width: 18 },
+      { header: "Итого сумма", key: "total", width: 15 },
+      { header: "Сотрудники", key: "employees", width: 30 },
       { header: "Статус", key: "status", width: 15 },
     ];
 
@@ -271,14 +332,13 @@ export async function generateExcelReport(
       Object.assign(cell, headerStyle);
     });
 
-    const statusMap: Record<string, string> = {
-      pending: "Ожидает",
-      confirmed: "Подтверждено",
-      done: "Выполнено",
-      cancelled: "Отменено",
-    };
-
     data.records.forEach((record) => {
+      const employees = record.completions && record.completions.length > 0
+        ? record.completions.map((c: any) => c.employee?.fullName || "").filter(Boolean).join(", ")
+        : "-";
+      const patientCount = record.patientCount || 1;
+      const total = record.service?.price ? record.service.price * patientCount : 0;
+
       recordsSheet.addRow({
         date: format(parseISO(record.date), "dd.MM.yyyy"),
         time: record.time,
@@ -286,7 +346,9 @@ export async function generateExcelReport(
         phone: record.client?.phone || "-",
         service: record.service?.name || "-",
         price: record.service?.price ? formatMoney(record.service.price) : "-",
-        employee: record.employee?.fullName || "-",
+        patientCount: patientCount,
+        total: total > 0 ? formatMoney(total) : "-",
+        employees: employees,
         status: statusMap[record.status] || record.status,
       });
     });
@@ -303,9 +365,11 @@ export async function generateExcelReport(
   const incomesSheet = workbook.addWorksheet("Доходы по дням");
   incomesSheet.columns = [
     { header: "Дата", key: "date", width: 12 },
+    { header: "Время", key: "time", width: 10 },
     { header: "Название", key: "name", width: 35 },
     { header: "Сумма", key: "amount", width: 15 },
-    { header: "Источник", key: "source", width: 20 },
+    { header: "Сотрудники", key: "employees", width: 25 },
+    { header: "Источник", key: "source", width: 15 },
   ];
 
   incomesSheet.getRow(1).eachCell((cell) => {
@@ -317,8 +381,10 @@ export async function generateExcelReport(
     const dayData = data.dailyIncome[date];
     const dateRow = incomesSheet.addRow({
       date: format(parseISO(date), "dd.MM.yyyy"),
+      time: "",
       name: `День: ${format(parseISO(date), "EEEE", { locale: ru })}`,
       amount: formatMoney(dayData.total),
+      employees: "",
       source: "",
     });
     dateRow.eachCell((cell) => {
@@ -326,11 +392,12 @@ export async function generateExcelReport(
     });
 
     dayData.items.forEach((item) => {
-      const timePrefix = item.time ? `${item.time} - ` : "";
       incomesSheet.addRow({
         date: "",
-        name: timePrefix + item.name,
+        time: item.time || "",
+        name: item.name,
         amount: formatMoney(item.amount),
+        employees: item.employeeName || "-",
         source: item.recordId ? "Из записи" : "Вручную",
       });
     });
@@ -338,16 +405,20 @@ export async function generateExcelReport(
 
   const totalIncomeRow = incomesSheet.addRow({
     date: "",
+    time: "",
     name: "ИТОГО",
     amount: formatMoney(data.analytics.totalIncome),
+    employees: "",
     source: "",
   });
-  totalIncomeRow.font = { bold: true };
+  totalIncomeRow.eachCell((cell) => {
+    Object.assign(cell, totalRowStyle);
+  });
 
   incomesSheet.eachRow((row, rowNumber) => {
     if (rowNumber > 1) {
       row.eachCell((cell) => {
-        if (!cell.style.fill) {
+        if (!cell.style.fill || (cell.style.fill as any).fgColor?.argb === undefined) {
           Object.assign(cell, cellStyle);
         }
       });
@@ -357,7 +428,7 @@ export async function generateExcelReport(
   const expensesSheet = workbook.addWorksheet("Расходы по дням");
   expensesSheet.columns = [
     { header: "Дата", key: "date", width: 12 },
-    { header: "Название", key: "name", width: 35 },
+    { header: "Название", key: "name", width: 40 },
     { header: "Сумма", key: "amount", width: 15 },
   ];
 
@@ -391,26 +462,79 @@ export async function generateExcelReport(
     name: "ИТОГО",
     amount: formatMoney(data.analytics.totalExpense),
   });
-  totalExpenseRow.font = { bold: true };
+  totalExpenseRow.eachCell((cell) => {
+    Object.assign(cell, totalRowStyle);
+  });
 
   expensesSheet.eachRow((row, rowNumber) => {
     if (rowNumber > 1) {
       row.eachCell((cell) => {
-        if (!cell.style.fill) {
+        if (!cell.style.fill || (cell.style.fill as any).fgColor?.argb === undefined) {
           Object.assign(cell, cellStyle);
         }
       });
     }
   });
 
+  if (data.serviceStats.length > 0) {
+    const servicesSheet = workbook.addWorksheet("Статистика по услугам");
+    servicesSheet.columns = [
+      { header: "#", key: "rank", width: 5 },
+      { header: "Услуга", key: "name", width: 35 },
+      { header: "Записей", key: "count", width: 12 },
+      { header: "Пациентов", key: "patientCount", width: 12 },
+      { header: "Сумма дохода", key: "total", width: 18 },
+    ];
+
+    servicesSheet.getRow(1).eachCell((cell) => {
+      Object.assign(cell, headerStyle);
+    });
+
+    let totalServiceIncome = 0;
+    let totalPatientCount = 0;
+    data.serviceStats.forEach((service, index) => {
+      totalServiceIncome += service.total;
+      totalPatientCount += service.patientCount;
+      servicesSheet.addRow({
+        rank: index + 1,
+        name: service.name,
+        count: service.count,
+        patientCount: service.patientCount,
+        total: formatMoney(service.total),
+      });
+    });
+
+    const totalServiceRow = servicesSheet.addRow({
+      rank: "",
+      name: "ИТОГО",
+      count: data.serviceStats.reduce((sum, s) => sum + s.count, 0),
+      patientCount: totalPatientCount,
+      total: formatMoney(totalServiceIncome),
+    });
+    totalServiceRow.eachCell((cell) => {
+      Object.assign(cell, totalRowStyle);
+    });
+
+    servicesSheet.eachRow((row, rowNumber) => {
+      if (rowNumber > 1) {
+        row.eachCell((cell) => {
+          if (!cell.style.fill || (cell.style.fill as any).fgColor?.argb === undefined) {
+            Object.assign(cell, cellStyle);
+          }
+        });
+      }
+    });
+  }
+
   if (data.clientStats.length > 0) {
-    const clientsSheet = workbook.addWorksheet("Клиенты");
+    const clientsSheet = workbook.addWorksheet("Статистика по клиентам");
     clientsSheet.columns = [
       { header: "#", key: "rank", width: 5 },
       { header: "Клиент", key: "name", width: 25 },
       { header: "Телефон", key: "phone", width: 15 },
-      { header: "Записей", key: "count", width: 10 },
-      { header: "Сумма", key: "total", width: 15 },
+      { header: "Записей", key: "count", width: 12 },
+      { header: "Пациентов", key: "patientCount", width: 12 },
+      { header: "Сумма", key: "total", width: 18 },
     ];
 
     clientsSheet.getRow(1).eachCell((cell) => {
@@ -423,6 +547,7 @@ export async function generateExcelReport(
         name: client.name,
         phone: client.phone || "-",
         count: client.count,
+        patientCount: client.patientCount,
         total: formatMoney(client.total),
       });
     });
@@ -436,69 +561,147 @@ export async function generateExcelReport(
     });
   }
 
-  if (data.serviceStats.length > 0) {
-    const servicesSheet = workbook.addWorksheet("ТОП услуг");
-    servicesSheet.columns = [
-      { header: "#", key: "rank", width: 5 },
-      { header: "Услуга", key: "name", width: 35 },
-      { header: "Кол-во", key: "count", width: 10 },
-      { header: "Сумма", key: "total", width: 15 },
-    ];
-
-    servicesSheet.getRow(1).eachCell((cell) => {
-      Object.assign(cell, headerStyle);
-    });
-
-    data.serviceStats.forEach((service, index) => {
-      servicesSheet.addRow({
-        rank: index + 1,
-        name: service.name,
-        count: service.count,
-        total: formatMoney(service.total),
-      });
-    });
-
-    servicesSheet.eachRow((row, rowNumber) => {
-      if (rowNumber > 1) {
-        row.eachCell((cell) => {
-          Object.assign(cell, cellStyle);
-        });
-      }
-    });
-  }
-
   if (data.employeeStats.length > 0) {
-    const employeesSheet = workbook.addWorksheet("ТОП сотрудников");
+    const employeesSheet = workbook.addWorksheet("Статистика по сотрудникам");
     employeesSheet.columns = [
       { header: "#", key: "rank", width: 5 },
       { header: "Сотрудник", key: "name", width: 25 },
-      { header: "Записей", key: "count", width: 10 },
-      { header: "Сумма", key: "total", width: 15 },
-      { header: "Услуги (подробно)", key: "services", width: 50 },
+      { header: "Пациентов обслужено", key: "patientCount", width: 22 },
+      { header: "Сумма дохода", key: "total", width: 18 },
     ];
 
     employeesSheet.getRow(1).eachCell((cell) => {
       Object.assign(cell, headerStyle);
     });
 
+    let totalEmployeePatients = 0;
+    let totalEmployeeIncome = 0;
     data.employeeStats.forEach((employee, index) => {
-      const servicesDetail = Object.entries(employee.services)
-        .map(([name, stats]) => `${name}: ${stats.count} шт. (${formatMoney(stats.total)})`)
-        .join("; ");
-
+      totalEmployeePatients += employee.patientCount;
+      totalEmployeeIncome += employee.total;
       employeesSheet.addRow({
         rank: index + 1,
         name: employee.name,
-        count: employee.count,
+        patientCount: employee.patientCount,
         total: formatMoney(employee.total),
-        services: servicesDetail,
       });
+    });
+
+    const totalEmployeeRow = employeesSheet.addRow({
+      rank: "",
+      name: "ИТОГО",
+      patientCount: totalEmployeePatients,
+      total: formatMoney(totalEmployeeIncome),
+    });
+    totalEmployeeRow.eachCell((cell) => {
+      Object.assign(cell, totalRowStyle);
     });
 
     employeesSheet.eachRow((row, rowNumber) => {
       if (rowNumber > 1) {
         row.eachCell((cell) => {
-          Object.assign(cell, cellStyle);
+          if (!cell.style.fill || (cell.style.fill as any).fgColor?.argb === undefined) {
+            Object.assign(cell, cellStyle);
+          }
+        });
+      }
+    });
+
+    const detailSheet = workbook.addWorksheet("Детализация по сотрудникам");
+    detailSheet.columns = [
+      { header: "Сотрудник", key: "employee", width: 25 },
+      { header: "Услуга", key: "service", width: 30 },
+      { header: "Пациентов", key: "patientCount", width: 15 },
+      { header: "Сумма", key: "total", width: 18 },
+    ];
+
+    detailSheet.getRow(1).eachCell((cell) => {
+      Object.assign(cell, headerStyle);
+    });
+
+    data.employeeStats.forEach((employee) => {
+      const employeeHeaderRow = detailSheet.addRow({
+        employee: employee.name,
+        service: "",
+        patientCount: employee.patientCount,
+        total: formatMoney(employee.total),
+      });
+      employeeHeaderRow.eachCell((cell) => {
+        Object.assign(cell, subHeaderStyle);
+      });
+
+      Object.entries(employee.services).forEach(([serviceName, stats]) => {
+        detailSheet.addRow({
+          employee: "",
+          service: serviceName,
+          patientCount: stats.patientCount,
+          total: formatMoney(stats.total),
+        });
+      });
+    });
+
+    detailSheet.eachRow((row, rowNumber) => {
+      if (rowNumber > 1) {
+        row.eachCell((cell) => {
+          if (!cell.style.fill || (cell.style.fill as any).fgColor?.argb === undefined) {
+            Object.assign(cell, cellStyle);
+          }
+        });
+      }
+    });
+  }
+
+  if (data.completionDetails.length > 0) {
+    const completionsSheet = workbook.addWorksheet("Выполнение услуг");
+    completionsSheet.columns = [
+      { header: "Дата", key: "date", width: 12 },
+      { header: "Время", key: "time", width: 10 },
+      { header: "Сотрудник", key: "employee", width: 25 },
+      { header: "Услуга", key: "service", width: 30 },
+      { header: "Пациентов", key: "patientCount", width: 12 },
+      { header: "Цена за пациента", key: "price", width: 18 },
+      { header: "Сумма", key: "total", width: 15 },
+    ];
+
+    completionsSheet.getRow(1).eachCell((cell) => {
+      Object.assign(cell, headerStyle);
+    });
+
+    data.completionDetails
+      .sort((a, b) => a.recordDate.localeCompare(b.recordDate) || a.recordTime.localeCompare(b.recordTime))
+      .forEach((detail) => {
+        completionsSheet.addRow({
+          date: format(parseISO(detail.recordDate), "dd.MM.yyyy"),
+          time: detail.recordTime,
+          employee: detail.employeeName,
+          service: detail.serviceName,
+          patientCount: detail.patientCount,
+          price: formatMoney(detail.servicePrice),
+          total: formatMoney(detail.servicePrice * detail.patientCount),
+        });
+      });
+
+    const totalCompletionPatients = data.completionDetails.reduce((sum, d) => sum + d.patientCount, 0);
+    const totalCompletionIncome = data.completionDetails.reduce((sum, d) => sum + d.servicePrice * d.patientCount, 0);
+    const totalCompletionRow = completionsSheet.addRow({
+      date: "",
+      time: "",
+      employee: "ИТОГО",
+      service: "",
+      patientCount: totalCompletionPatients,
+      price: "",
+      total: formatMoney(totalCompletionIncome),
+    });
+    totalCompletionRow.eachCell((cell) => {
+      Object.assign(cell, totalRowStyle);
+    });
+
+    completionsSheet.eachRow((row, rowNumber) => {
+      if (rowNumber > 1) {
+        row.eachCell((cell) => {
+          if (!cell.style.fill || (cell.style.fill as any).fgColor?.argb === undefined) {
+            Object.assign(cell, cellStyle);
+          }
         });
       }
     });
@@ -532,6 +735,8 @@ export async function generateWordReport(
   };
 
   const sections: any[] = [];
+  const completedRecords = data.records.filter(r => r.status === "done");
+  const totalPatients = completedRecords.reduce((sum, r) => sum + (r.patientCount || 1), 0);
 
   sections.push(
     new Paragraph({
@@ -581,7 +786,7 @@ export async function generateWordReport(
       new TableRow({
         children: [
           new TableCell({
-            children: [new Paragraph({ children: [new TextRun({ text: "Итог", bold: true })] })],
+            children: [new Paragraph({ children: [new TextRun({ text: "Итог (прибыль)", bold: true })] })],
           }),
           new TableCell({
             children: [
@@ -613,6 +818,26 @@ export async function generateWordReport(
           }),
         ],
       }),
+      new TableRow({
+        children: [
+          new TableCell({
+            children: [new Paragraph({ text: "Выполненных записей", alignment: AlignmentType.LEFT })],
+          }),
+          new TableCell({
+            children: [new Paragraph({ text: String(completedRecords.length), alignment: AlignmentType.RIGHT })],
+          }),
+        ],
+      }),
+      new TableRow({
+        children: [
+          new TableCell({
+            children: [new Paragraph({ text: "Всего пациентов обслужено", alignment: AlignmentType.LEFT })],
+          }),
+          new TableCell({
+            children: [new Paragraph({ text: String(totalPatients), alignment: AlignmentType.RIGHT })],
+          }),
+        ],
+      }),
     ],
   });
 
@@ -637,25 +862,37 @@ export async function generateWordReport(
     const recordsHeader = new TableRow({
       children: [
         new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Дата", bold: true })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Время", bold: true })] })] }),
         new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Клиент", bold: true })] })] }),
         new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Услуга", bold: true })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Сумма", bold: true })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Цена", bold: true })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Пац.", bold: true })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Итого", bold: true })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Сотрудники", bold: true })] })] }),
         new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Статус", bold: true })] })] }),
       ],
     });
 
-    const recordRows = data.records.map(
-      (record) =>
-        new TableRow({
-          children: [
-            new TableCell({ children: [new Paragraph({ text: format(parseISO(record.date), "dd.MM.yyyy") })] }),
-            new TableCell({ children: [new Paragraph({ text: record.client?.fullName || "-" })] }),
-            new TableCell({ children: [new Paragraph({ text: record.service?.name || "-" })] }),
-            new TableCell({ children: [new Paragraph({ text: record.service?.price ? formatMoney(record.service.price) : "-" })] }),
-            new TableCell({ children: [new Paragraph({ text: statusMap[record.status] || record.status })] }),
-          ],
-        })
-    );
+    const recordRows = data.records.map((record) => {
+      const patientCount = record.patientCount || 1;
+      const total = record.service?.price ? record.service.price * patientCount : 0;
+      const employees = record.completions && record.completions.length > 0
+        ? record.completions.map((c: any) => c.employee?.fullName || "").filter(Boolean).join(", ")
+        : "-";
+      return new TableRow({
+        children: [
+          new TableCell({ children: [new Paragraph({ text: format(parseISO(record.date), "dd.MM.yyyy") })] }),
+          new TableCell({ children: [new Paragraph({ text: record.time || "-" })] }),
+          new TableCell({ children: [new Paragraph({ text: record.client?.fullName || "-" })] }),
+          new TableCell({ children: [new Paragraph({ text: record.service?.name || "-" })] }),
+          new TableCell({ children: [new Paragraph({ text: record.service?.price ? formatMoney(record.service.price) : "-" })] }),
+          new TableCell({ children: [new Paragraph({ text: String(patientCount) })] }),
+          new TableCell({ children: [new Paragraph({ text: total > 0 ? formatMoney(total) : "-" })] }),
+          new TableCell({ children: [new Paragraph({ text: employees })] }),
+          new TableCell({ children: [new Paragraph({ text: statusMap[record.status] || record.status })] }),
+        ],
+      });
+    });
 
     const recordsTable = new Table({
       width: { size: 100, type: WidthType.PERCENTAGE },
@@ -680,7 +917,9 @@ export async function generateWordReport(
       new TableRow({
         children: [
           new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Дата", bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Время", bold: true })] })] }),
           new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Описание", bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Сотрудники", bold: true })] })] }),
           new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Сумма", bold: true })] })] }),
         ],
       }),
@@ -692,18 +931,21 @@ export async function generateWordReport(
         new TableRow({
           children: [
             new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: format(parseISO(date), "dd.MM.yyyy"), bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ text: "" })] }),
             new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: format(parseISO(date), "EEEE", { locale: ru }), bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ text: "" })] }),
             new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatMoney(dayData.total), bold: true })] })] }),
           ],
         })
       );
       dayData.items.forEach((item) => {
-        const timePrefix = item.time ? `${item.time} - ` : "";
         incomeRows.push(
           new TableRow({
             children: [
               new TableCell({ children: [new Paragraph({ text: "" })] }),
-              new TableCell({ children: [new Paragraph({ text: timePrefix + item.name })] }),
+              new TableCell({ children: [new Paragraph({ text: item.time || "" })] }),
+              new TableCell({ children: [new Paragraph({ text: item.name })] }),
+              new TableCell({ children: [new Paragraph({ text: item.employeeName || "-" })] }),
               new TableCell({ children: [new Paragraph({ text: formatMoney(item.amount) })] }),
             ],
           })
@@ -715,7 +957,9 @@ export async function generateWordReport(
       new TableRow({
         children: [
           new TableCell({ children: [new Paragraph({ text: "" })] }),
+          new TableCell({ children: [new Paragraph({ text: "" })] }),
           new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "ИТОГО", bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ text: "" })] }),
           new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatMoney(data.analytics.totalIncome), bold: true })] })] }),
         ],
       })
@@ -797,52 +1041,10 @@ export async function generateWordReport(
     sections.push(new Paragraph({ text: "Нет данных о расходах за выбранный период." }));
   }
 
-  if (data.clientStats.length > 0) {
-    sections.push(
-      new Paragraph({
-        text: "Клиенты",
-        heading: HeadingLevel.HEADING_2,
-        spacing: { before: 400, after: 200 },
-      })
-    );
-
-    const clientRows: TableRow[] = [
-      new TableRow({
-        children: [
-          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "#", bold: true })] })] }),
-          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Клиент", bold: true })] })] }),
-          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Записей", bold: true })] })] }),
-          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Сумма", bold: true })] })] }),
-        ],
-      }),
-    ];
-
-    data.clientStats.forEach((client, index) => {
-      clientRows.push(
-        new TableRow({
-          children: [
-            new TableCell({ children: [new Paragraph({ text: String(index + 1) })] }),
-            new TableCell({ children: [new Paragraph({ text: client.name })] }),
-            new TableCell({ children: [new Paragraph({ text: String(client.count) })] }),
-            new TableCell({ children: [new Paragraph({ text: formatMoney(client.total) })] }),
-          ],
-        })
-      );
-    });
-
-    sections.push(
-      new Table({
-        width: { size: 100, type: WidthType.PERCENTAGE },
-        borders: tableBorders,
-        rows: clientRows,
-      })
-    );
-  }
-
   if (data.serviceStats.length > 0) {
     sections.push(
       new Paragraph({
-        text: "ТОП услуг",
+        text: "Статистика по услугам",
         heading: HeadingLevel.HEADING_2,
         spacing: { before: 400, after: 200 },
       })
@@ -853,7 +1055,8 @@ export async function generateWordReport(
         children: [
           new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "#", bold: true })] })] }),
           new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Услуга", bold: true })] })] }),
-          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Кол-во", bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Записей", bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Пациентов", bold: true })] })] }),
           new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Сумма", bold: true })] })] }),
         ],
       }),
@@ -866,6 +1069,7 @@ export async function generateWordReport(
             new TableCell({ children: [new Paragraph({ text: String(index + 1) })] }),
             new TableCell({ children: [new Paragraph({ text: service.name })] }),
             new TableCell({ children: [new Paragraph({ text: String(service.count) })] }),
+            new TableCell({ children: [new Paragraph({ text: String(service.patientCount) })] }),
             new TableCell({ children: [new Paragraph({ text: formatMoney(service.total) })] }),
           ],
         })
@@ -881,10 +1085,54 @@ export async function generateWordReport(
     );
   }
 
+  if (data.clientStats.length > 0) {
+    sections.push(
+      new Paragraph({
+        text: "Статистика по клиентам",
+        heading: HeadingLevel.HEADING_2,
+        spacing: { before: 400, after: 200 },
+      })
+    );
+
+    const clientRows: TableRow[] = [
+      new TableRow({
+        children: [
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "#", bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Клиент", bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Записей", bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Пациентов", bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Сумма", bold: true })] })] }),
+        ],
+      }),
+    ];
+
+    data.clientStats.forEach((client, index) => {
+      clientRows.push(
+        new TableRow({
+          children: [
+            new TableCell({ children: [new Paragraph({ text: String(index + 1) })] }),
+            new TableCell({ children: [new Paragraph({ text: client.name })] }),
+            new TableCell({ children: [new Paragraph({ text: String(client.count) })] }),
+            new TableCell({ children: [new Paragraph({ text: String(client.patientCount) })] }),
+            new TableCell({ children: [new Paragraph({ text: formatMoney(client.total) })] }),
+          ],
+        })
+      );
+    });
+
+    sections.push(
+      new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        borders: tableBorders,
+        rows: clientRows,
+      })
+    );
+  }
+
   if (data.employeeStats.length > 0) {
     sections.push(
       new Paragraph({
-        text: "ТОП сотрудников",
+        text: "Статистика по сотрудникам",
         heading: HeadingLevel.HEADING_2,
         spacing: { before: 400, after: 200 },
       })
@@ -893,7 +1141,7 @@ export async function generateWordReport(
     data.employeeStats.forEach((employee, index) => {
       sections.push(
         new Paragraph({
-          text: `${index + 1}. ${employee.name} - ${formatMoney(employee.total)} (${employee.count} записей)`,
+          text: `${index + 1}. ${employee.name} - ${formatMoney(employee.total)} (${employee.patientCount} пациентов)`,
           spacing: { before: 100, after: 50 },
         })
       );
@@ -902,7 +1150,7 @@ export async function generateWordReport(
         new TableRow({
           children: [
             new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Услуга", bold: true })] })] }),
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Кол-во", bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Пациентов", bold: true })] })] }),
             new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Сумма", bold: true })] })] }),
           ],
         }),
@@ -913,7 +1161,7 @@ export async function generateWordReport(
           new TableRow({
             children: [
               new TableCell({ children: [new Paragraph({ text: serviceName })] }),
-              new TableCell({ children: [new Paragraph({ text: String(stats.count) })] }),
+              new TableCell({ children: [new Paragraph({ text: String(stats.patientCount) })] }),
               new TableCell({ children: [new Paragraph({ text: formatMoney(stats.total) })] }),
             ],
           })
@@ -928,6 +1176,69 @@ export async function generateWordReport(
         })
       );
     });
+  }
+
+  if (data.completionDetails.length > 0) {
+    sections.push(
+      new Paragraph({
+        text: "Выполнение услуг (детализация)",
+        heading: HeadingLevel.HEADING_2,
+        spacing: { before: 400, after: 200 },
+      })
+    );
+
+    const completionRows: TableRow[] = [
+      new TableRow({
+        children: [
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Дата", bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Время", bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Сотрудник", bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Услуга", bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Пац.", bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Сумма", bold: true })] })] }),
+        ],
+      }),
+    ];
+
+    data.completionDetails
+      .sort((a, b) => a.recordDate.localeCompare(b.recordDate) || a.recordTime.localeCompare(b.recordTime))
+      .forEach((detail) => {
+        completionRows.push(
+          new TableRow({
+            children: [
+              new TableCell({ children: [new Paragraph({ text: format(parseISO(detail.recordDate), "dd.MM.yyyy") })] }),
+              new TableCell({ children: [new Paragraph({ text: detail.recordTime })] }),
+              new TableCell({ children: [new Paragraph({ text: detail.employeeName })] }),
+              new TableCell({ children: [new Paragraph({ text: detail.serviceName })] }),
+              new TableCell({ children: [new Paragraph({ text: String(detail.patientCount) })] }),
+              new TableCell({ children: [new Paragraph({ text: formatMoney(detail.servicePrice * detail.patientCount) })] }),
+            ],
+          })
+        );
+      });
+
+    const totalCompletionPatients = data.completionDetails.reduce((sum, d) => sum + d.patientCount, 0);
+    const totalCompletionIncome = data.completionDetails.reduce((sum, d) => sum + d.servicePrice * d.patientCount, 0);
+    completionRows.push(
+      new TableRow({
+        children: [
+          new TableCell({ children: [new Paragraph({ text: "" })] }),
+          new TableCell({ children: [new Paragraph({ text: "" })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "ИТОГО", bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ text: "" })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(totalCompletionPatients), bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatMoney(totalCompletionIncome), bold: true })] })] }),
+        ],
+      })
+    );
+
+    sections.push(
+      new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        borders: tableBorders,
+        rows: completionRows,
+      })
+    );
   }
 
   sections.push(
