@@ -399,16 +399,21 @@ export async function registerRoutes(
       // Update record status to "done" when completed
       await storage.updateRecord(record.id, { status: "done" });
 
-      // Create income for this completion
-      const pricePerPatient = record.service.price;
-      await storage.createIncome({
-        date: record.date,
-        time: record.time || undefined,
-        name: `${record.service.name} (${patientCount} пац.)`,
-        amount: pricePerPatient * patientCount,
-        recordId: record.id,
-        reminder: false,
-      });
+      // Create income only ONCE per record (check if income already exists for this record)
+      const existingIncomes = await storage.getIncomesByRecordId(record.id);
+      if (existingIncomes.length === 0) {
+        // Income = service price × patient count from the RECORD (not completion)
+        const recordPatientCount = record.patientCount || 1;
+        const totalIncome = record.service.price * recordPatientCount;
+        await storage.createIncome({
+          date: record.date,
+          time: record.time || undefined,
+          name: `${record.service.name} (${recordPatientCount} пац.)`,
+          amount: totalIncome,
+          recordId: record.id,
+          reminder: false,
+        });
+      }
 
       res.json(completion);
     } catch (error) {

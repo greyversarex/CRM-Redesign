@@ -46,6 +46,7 @@ export interface IStorage {
   deleteRecord(id: string): Promise<void>;
   
   getIncomesByDate(date: string): Promise<IncomeWithRelations[]>;
+  getIncomesByRecordId(recordId: string): Promise<Income[]>;
   createIncome(income: InsertIncome): Promise<Income>;
   deleteIncome(id: string): Promise<void>;
   
@@ -429,6 +430,10 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
+  async getIncomesByRecordId(recordId: string): Promise<Income[]> {
+    return db.select().from(incomes).where(eq(incomes.recordId, recordId));
+  }
+
   async createIncome(insertIncome: InsertIncome): Promise<Income> {
     const [income] = await db.insert(incomes).values(insertIncome).returning();
     return income;
@@ -595,11 +600,12 @@ export class DatabaseStorage implements IStorage {
     );
 
     // Get employee stats from recordCompletions table
+    // Employee revenue = price × their completion's patientCount (shows their individual contribution)
     const completionsData = await db
       .select({
         completionId: recordCompletions.id,
         employeeId: recordCompletions.employeeId,
-        patientCount: recordCompletions.patientCount,
+        completionPatientCount: recordCompletions.patientCount,
         recordDate: records.date,
         servicePrice: services.price,
         employeeName: users.fullName,
@@ -616,6 +622,7 @@ export class DatabaseStorage implements IStorage {
       );
 
     const employeeMap = new Map<string, { fullName: string; completedServices: number; revenue: number }>();
+    
     for (const row of completionsData) {
       const existing = employeeMap.get(row.employeeId) || {
         fullName: row.employeeName,
@@ -623,7 +630,8 @@ export class DatabaseStorage implements IStorage {
         revenue: 0,
       };
       existing.completedServices += 1;
-      existing.revenue += (row.servicePrice || 0) * (row.patientCount || 1);
+      // Revenue = price × patients they serviced (their contribution)
+      existing.revenue += (row.servicePrice || 0) * (row.completionPatientCount || 1);
       employeeMap.set(row.employeeId, existing);
     }
 
