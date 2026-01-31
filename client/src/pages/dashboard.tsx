@@ -95,7 +95,11 @@ function QuickRecordForm({ date, onSuccess }: { date: string; onSuccess: () => v
   const mutation = useMutation({
     mutationFn: (data: any) => apiRequest("POST", "/api/records", data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/records"] });
+      queryClient.invalidateQueries({ predicate: (query) => 
+        Array.isArray(query.queryKey) && 
+        typeof query.queryKey[0] === 'string' && 
+        query.queryKey[0].startsWith("/api/records")
+      });
       queryClient.invalidateQueries({ queryKey: ["/api/earnings"] });
       queryClient.invalidateQueries({ queryKey: ["/api/incomes"] });
       toast({ title: "Запись создана" });
