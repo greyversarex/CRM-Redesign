@@ -467,6 +467,7 @@ export class DatabaseStorage implements IStorage {
         recordId: incomes.recordId,
         reminder: incomes.reminder,
         serviceName: services.name,
+        clientId: records.clientId,
       })
       .from(incomes)
       .leftJoin(records, eq(incomes.recordId, records.id))
@@ -486,10 +487,19 @@ export class DatabaseStorage implements IStorage {
       employeeName: string | null;
     }[] = [];
 
+    // Track unique records and clients
+    const uniqueRecordIds = new Set<string>();
+    const uniqueClientIds = new Set<string>();
+
     for (const income of monthIncomes) {
       let employeeName: string | null = null;
       
       if (income.recordId) {
+        uniqueRecordIds.add(income.recordId);
+        if (income.clientId) {
+          uniqueClientIds.add(income.clientId);
+        }
+        
         // Get all employees who completed this record
         const completions = await db
           .select({ employeeName: users.fullName })
@@ -503,7 +513,14 @@ export class DatabaseStorage implements IStorage {
       }
       
       incomeWithEmployees.push({
-        ...income,
+        id: income.id,
+        date: income.date,
+        time: income.time,
+        name: income.name,
+        amount: income.amount,
+        recordId: income.recordId,
+        reminder: income.reminder,
+        serviceName: income.serviceName,
         employeeName,
       });
     }
@@ -517,7 +534,7 @@ export class DatabaseStorage implements IStorage {
       byDate[income.date].push(income);
     }
 
-    // Group by service for chart
+    // Group by service for list
     const byService: Record<string, number> = {};
     for (const income of incomeWithEmployees) {
       const serviceName = income.serviceName || income.name;
@@ -530,6 +547,8 @@ export class DatabaseStorage implements IStorage {
       byDate,
       byService,
       totalIncome,
+      recordCount: uniqueRecordIds.size,
+      clientCount: uniqueClientIds.size,
     };
   }
 

@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { format, startOfMonth, endOfMonth, subMonths, addMonths, parseISO } from "date-fns";
 import { ru } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, ArrowLeft, Plus, TrendingUp, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowLeft, Plus, TrendingUp, Trash2, FileText, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,7 +12,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 
 interface IncomeItem {
   id: string;
@@ -29,9 +28,9 @@ interface DetailedIncomeData {
   byDate: Record<string, IncomeItem[]>;
   byService: Record<string, number>;
   totalIncome: number;
+  recordCount: number;
+  clientCount: number;
 }
-
-const COLORS = ["#10B981", "#3B82F6", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899", "#06B6D4", "#84CC16"];
 
 export default function AnalyticsIncomePage() {
   const [, setLocation] = useLocation();
@@ -83,8 +82,8 @@ export default function AnalyticsIncomePage() {
     });
   };
 
-  const chartData = data?.byService
-    ? Object.entries(data.byService).map(([name, value]) => ({ name, value }))
+  const serviceList = data?.byService
+    ? Object.entries(data.byService).sort((a, b) => b[1] - a[1])
     : [];
 
   const sortedDates = data?.byDate
@@ -140,13 +139,35 @@ export default function AnalyticsIncomePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card>
               <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-xl">
-                    <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-400" />
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-xl">
+                      <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Общий доход за месяц</p>
+                      <p className="text-3xl font-bold text-green-600">{data?.totalIncome || 0} с</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Общий доход за месяц</p>
-                    <p className="text-3xl font-bold text-green-600">{data?.totalIncome || 0} с</p>
+                  <div className="grid grid-cols-2 gap-4 pt-2 border-t">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                        <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Записей</p>
+                        <p className="text-lg font-semibold">{data?.recordCount || 0}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                        <Users className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Клиентов</p>
+                        <p className="text-lg font-semibold">{data?.clientCount || 0}</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -157,28 +178,17 @@ export default function AnalyticsIncomePage() {
                 <CardTitle className="text-sm font-medium">Доход по услугам</CardTitle>
               </CardHeader>
               <CardContent>
-                {chartData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={200}>
-                    <PieChart>
-                      <Pie
-                        data={chartData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={40}
-                        outerRadius={70}
-                        paddingAngle={2}
-                        dataKey="value"
-                      >
-                        {chartData.map((_, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value: number) => `${value} с`} />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
+                {serviceList.length > 0 ? (
+                  <div className="space-y-3">
+                    {serviceList.map(([serviceName, amount]) => (
+                      <div key={serviceName} className="flex items-center justify-between">
+                        <span className="text-sm">{serviceName}</span>
+                        <span className="font-medium text-green-600">{amount} с</span>
+                      </div>
+                    ))}
+                  </div>
                 ) : (
-                  <div className="flex items-center justify-center h-[200px] text-muted-foreground">
+                  <div className="flex items-center justify-center h-[100px] text-muted-foreground">
                     Нет данных
                   </div>
                 )}
