@@ -604,7 +604,7 @@ export class DatabaseStorage implements IStorage {
           revenue: 0,
         };
         existing.completedServices += 1;
-        existing.revenue += row.services.price;
+        existing.revenue += row.services.price * (row.records.patientCount || 1);
         employeeMap.set(row.users.id, existing);
       }
     }

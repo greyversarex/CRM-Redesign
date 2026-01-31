@@ -467,7 +467,7 @@ function RecordsTab({ date }: { date: string }) {
                         {record.completions.map(c => c.employee?.fullName).filter(Boolean).join(", ")}
                       </p>
                     )}
-                    {isAdmin && <p className="text-xs sm:text-sm font-medium text-primary mt-1">{record.service.price} с</p>}
+                    {isAdmin && <p className="text-xs sm:text-sm font-medium text-primary mt-1">{record.service.price * (record.patientCount || 1)} с</p>}
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
                     {record.status === "pending" && (!record.completions || record.completions.length === 0) && (

@@ -108,7 +108,7 @@ export default function ClientDetailPage() {
                     <TableCell>
                       <div>
                         <p className="font-medium">{record.service.name}</p>
-                        {isAdmin && <p className="text-sm text-muted-foreground">{record.service.price} с</p>}
+                        {isAdmin && <p className="text-sm text-muted-foreground">{record.service.price * (record.patientCount || 1)} с</p>}
                       </div>
                     </TableCell>
                     <TableCell>
