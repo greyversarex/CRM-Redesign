@@ -82,6 +82,8 @@ function EditQuantityForm({ item, onSuccess }: { item: InventoryItem; onSuccess:
     mutationFn: async (data: any) => apiRequest("PATCH", `/api/inventory/${item.id}/quantity`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/inventory/${item.id}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/inventory/${item.id}/history`] });
       toast({ title: "Количество обновлено" });
       onSuccess();
     },
@@ -138,6 +140,8 @@ function PurchaseForm({ item, onSuccess }: { item: InventoryItem; onSuccess: () 
     mutationFn: async (data: any) => apiRequest("POST", `/api/inventory/${item.id}/purchase`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/inventory/${item.id}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/inventory/${item.id}/history`] });
       queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
       toast({ title: "Покупка оформлена", description: `Расход ${total} с. добавлен` });
       onSuccess();

@@ -16,6 +16,14 @@ A CRM system for managing clients, services, appointments, and finances with cal
 - **Date validation**: Auto-swaps dates if start > end
 - **Employee stats redesigned**: Day page "Сотрудники за день" now shows employee name, service name, and patient count per service
 
+### Inventory Management (Склад)
+- **New page "Склад"** in sidebar after "Сотрудники" (admin only)
+- **Add items**: Create inventory items with name, quantity, and unit
+- **Edit quantity**: Pencil button to manually adjust quantity with optional note
+- **Purchase button**: Enter quantity and price per unit, creates expense record automatically
+- **History tracking**: Click item name to see full history of all changes with dates
+- **Database tables**: `inventory_items` and `inventory_history` for tracking stock and changes
+
 ### Report Improvements
 - Removed "Выполненных записей" from summary statistics
 - Removed "Сумма" column from employee statistics

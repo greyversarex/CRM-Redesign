@@ -53,12 +53,12 @@ export default function InventoryHistoryPage() {
   const itemId = params.id;
 
   const { data: item, isLoading: itemLoading } = useQuery<InventoryItem>({
-    queryKey: ["/api/inventory", itemId],
+    queryKey: [`/api/inventory/${itemId}`],
     enabled: !!itemId,
   });
 
   const { data: history = [], isLoading: historyLoading } = useQuery<HistoryEntry[]>({
-    queryKey: ["/api/inventory", itemId, "history"],
+    queryKey: [`/api/inventory/${itemId}/history`],
     enabled: !!itemId,
   });
 
