@@ -749,16 +749,20 @@ export async function registerRoutes(
     }
   });
 
+  const servicePaymentSchema = z.object({
+    paymentPerPatient: z.number().int().min(0, "Payment must be non-negative"),
+  });
+
   app.put("/api/service-payments/:serviceId", requireAdmin, async (req, res) => {
     try {
       const { serviceId } = req.params;
-      const { paymentPerPatient } = req.body;
+      const parsed = servicePaymentSchema.safeParse(req.body);
       
-      if (typeof paymentPerPatient !== "number" || paymentPerPatient < 0) {
-        return res.status(400).json({ error: "Invalid payment amount" });
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid payment amount", details: parsed.error.errors });
       }
       
-      const payment = await storage.upsertServicePayment(serviceId, paymentPerPatient);
+      const payment = await storage.upsertServicePayment(serviceId, parsed.data.paymentPerPatient);
       res.json(payment);
     } catch (error) {
       res.status(500).json({ error: "Failed to update service payment" });
@@ -766,15 +770,20 @@ export async function registerRoutes(
   });
 
   // Salary data endpoint
+  const salaryQuerySchema = z.object({
+    start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid start date format"),
+    end: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid end date format"),
+  });
+
   app.get("/api/salary", requireAdmin, async (req, res) => {
     try {
-      const { start, end } = req.query;
-      
-      if (!start || !end) {
-        return res.status(400).json({ error: "Start and end dates required" });
+      const parsed = salaryQuerySchema.safeParse(req.query);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid parameters", details: parsed.error.errors });
       }
       
-      const data = await storage.getSalaryData(start as string, end as string);
+      const { start, end } = parsed.data;
+      const data = await storage.getSalaryData(start, end);
       res.json(data);
     } catch (error) {
       console.error("Salary data error:", error);

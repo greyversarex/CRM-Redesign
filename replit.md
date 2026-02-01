@@ -24,6 +24,14 @@ A CRM system for managing clients, services, appointments, and finances with cal
 - **History tracking**: Click item name to see full history of all changes with dates
 - **Database tables**: `inventory_items` and `inventory_history` for tracking stock and changes
 
+### Salary Management (Зарплата)
+- **New page "Зарплата"** in sidebar after "Склад" (admin only)
+- **Date range picker**: Select period with quick presets (Today, This month, Last month, This year)
+- **Payment settings**: Configure payment per patient for each service via settings dialog
+- **Employee breakdown**: Shows each employee with services, patient count, and calculated salary
+- **Salary formula**: Employee salary = sum of (patients per service × payment per patient for that service)
+- **Database table**: `service_payments` stores payment-per-patient amount for each service
+
 ### Report Improvements
 - Removed "Выполненных записей" from summary statistics
 - Removed "Сумма" column from employee statistics

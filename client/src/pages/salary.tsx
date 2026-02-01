@@ -63,7 +63,7 @@ function PaymentSettingsDialog() {
       apiRequest("PUT", `/api/service-payments/${serviceId}`, { paymentPerPatient }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/service-payments"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/salary"] });
+      queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === "/api/salary" });
       toast({ title: "Отчисление сохранено" });
     },
     onError: () => {
@@ -102,6 +102,7 @@ function PaymentSettingsDialog() {
                   placeholder="0"
                   defaultValue={paymentMap.get(service.id) || 0}
                   onBlur={(e) => handleSave(service.id, e.target.value)}
+                  disabled={updateMutation.isPending}
                   data-testid={`input-payment-${service.id}`}
                 />
                 <span className="text-sm text-muted-foreground">с.</span>
@@ -124,7 +125,12 @@ export default function SalaryPage() {
   const endStr = format(endDate, "yyyy-MM-dd");
 
   const { data, isLoading } = useQuery<SalaryData>({
-    queryKey: [`/api/salary?start=${startStr}&end=${endStr}`],
+    queryKey: ["/api/salary", startStr, endStr],
+    queryFn: async () => {
+      const res = await fetch(`/api/salary?start=${startStr}&end=${endStr}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch salary data");
+      return res.json();
+    },
   });
 
   const handleStartChange = (date: Date | undefined) => {
