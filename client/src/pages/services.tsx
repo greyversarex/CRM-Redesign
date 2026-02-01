@@ -55,6 +55,8 @@ function ServiceForm({ onSuccess, service }: { onSuccess: () => void; service?: 
         <Label>Цена (с)</Label>
         <Input
           type="number"
+          inputMode="numeric"
+          pattern="[0-9]*"
           value={price}
           onChange={(e) => setPrice(e.target.value)}
           placeholder="0"

@@ -238,6 +238,8 @@ function RecordForm({
           </Label>
           <Input
             type="number"
+            inputMode="numeric"
+            pattern="[0-9]*"
             min="1"
             value={patientCount}
             onChange={(e) => setPatientCount(parseInt(e.target.value) || 1)}
@@ -277,7 +279,14 @@ function FinanceForm({
   const [reminder, setReminder] = useState(false);
 
   const mutation = useMutation({
-    mutationFn: (data: any) => apiRequest("POST", `/api/${type === "income" ? "incomes" : "expenses"}`, data),
+    mutationFn: async (data: any) => {
+      const response = await apiRequest("POST", `/api/${type === "income" ? "incomes" : "expenses"}`, data);
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || "Ошибка сохранения");
+      }
+      return response;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/incomes"] });
       queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
@@ -285,8 +294,8 @@ function FinanceForm({
       toast({ title: type === "income" ? "Доход добавлен" : "Расход добавлен" });
       onSuccess();
     },
-    onError: () => {
-      toast({ title: "Ошибка", variant: "destructive" });
+    onError: (error: Error) => {
+      toast({ title: "Ошибка", description: error.message, variant: "destructive" });
     },
   });
 
@@ -310,6 +319,8 @@ function FinanceForm({
         <Label>Сумма (с)</Label>
         <Input
           type="number"
+          inputMode="numeric"
+          pattern="[0-9]*"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           placeholder="0"

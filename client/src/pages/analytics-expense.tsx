@@ -211,6 +211,8 @@ export default function AnalyticsExpensePage() {
                       <Label>Сумма</Label>
                       <Input
                         type="number"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         value={newExpense.amount}
                         onChange={(e) => setNewExpense({ ...newExpense, amount: e.target.value })}
                         placeholder="Сумма"

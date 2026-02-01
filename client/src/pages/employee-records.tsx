@@ -219,6 +219,8 @@ function RecordForm({
         <Label>Кол-во пациентов</Label>
         <Input
           type="number"
+          inputMode="numeric"
+          pattern="[0-9]*"
           min={1}
           value={patientCount}
           onChange={(e) => setPatientCount(parseInt(e.target.value) || 1)}

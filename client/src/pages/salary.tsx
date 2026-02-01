@@ -98,6 +98,8 @@ function PaymentSettingsDialog() {
               <div className="flex items-center gap-2">
                 <Input
                   type="number"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   className="w-24"
                   placeholder="0"
                   defaultValue={paymentMap.get(service.id) || 0}

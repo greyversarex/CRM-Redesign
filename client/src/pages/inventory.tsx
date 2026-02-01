@@ -19,14 +19,21 @@ function AddItemForm({ onSuccess }: { onSuccess: () => void }) {
   const [quantity, setQuantity] = useState("0");
 
   const mutation = useMutation({
-    mutationFn: async (data: any) => apiRequest("POST", "/api/inventory", data),
+    mutationFn: async (data: any) => {
+      const response = await apiRequest("POST", "/api/inventory", data);
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || "Ошибка добавления товара");
+      }
+      return response;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
       toast({ title: "Товар добавлен" });
       onSuccess();
     },
-    onError: () => {
-      toast({ title: "Ошибка", variant: "destructive" });
+    onError: (error: Error) => {
+      toast({ title: "Ошибка", description: error.message, variant: "destructive" });
     },
   });
 
@@ -50,6 +57,8 @@ function AddItemForm({ onSuccess }: { onSuccess: () => void }) {
         <Label>Начальное количество</Label>
         <Input
           type="number"
+          inputMode="numeric"
+          pattern="[0-9]*"
           value={quantity}
           onChange={(e) => setQuantity(e.target.value)}
           placeholder="0"
@@ -68,7 +77,14 @@ function EditQuantityForm({ item, onSuccess }: { item: InventoryItem; onSuccess:
   const [quantity, setQuantity] = useState(item.quantity.toString());
 
   const mutation = useMutation({
-    mutationFn: async (data: any) => apiRequest("PATCH", `/api/inventory/${item.id}/quantity`, data),
+    mutationFn: async (data: any) => {
+      const response = await apiRequest("PATCH", `/api/inventory/${item.id}/quantity`, data);
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || "Ошибка обновления количества");
+      }
+      return response;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
       queryClient.invalidateQueries({ queryKey: [`/api/inventory/${item.id}`] });
@@ -76,8 +92,8 @@ function EditQuantityForm({ item, onSuccess }: { item: InventoryItem; onSuccess:
       toast({ title: "Количество обновлено" });
       onSuccess();
     },
-    onError: () => {
-      toast({ title: "Ошибка", variant: "destructive" });
+    onError: (error: Error) => {
+      toast({ title: "Ошибка", description: error.message, variant: "destructive" });
     },
   });
 
@@ -96,6 +112,8 @@ function EditQuantityForm({ item, onSuccess }: { item: InventoryItem; onSuccess:
         <Label>Текущее количество: {item.quantity} шт</Label>
         <Input
           type="number"
+          inputMode="numeric"
+          pattern="[0-9]*"
           value={quantity}
           onChange={(e) => setQuantity(e.target.value)}
           placeholder="Новое количество"
@@ -117,7 +135,14 @@ function PurchaseForm({ item, onSuccess }: { item: InventoryItem; onSuccess: () 
   const total = (parseInt(quantity) || 0) * (parseInt(pricePerUnit) || 0);
 
   const mutation = useMutation({
-    mutationFn: async (data: any) => apiRequest("POST", `/api/inventory/${item.id}/purchase`, data),
+    mutationFn: async (data: any) => {
+      const response = await apiRequest("POST", `/api/inventory/${item.id}/purchase`, data);
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || "Ошибка оформления покупки");
+      }
+      return response;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
       queryClient.invalidateQueries({ queryKey: [`/api/inventory/${item.id}`] });
@@ -126,8 +151,8 @@ function PurchaseForm({ item, onSuccess }: { item: InventoryItem; onSuccess: () 
       toast({ title: "Покупка оформлена", description: `Расход ${total} с. добавлен` });
       onSuccess();
     },
-    onError: () => {
-      toast({ title: "Ошибка", variant: "destructive" });
+    onError: (error: Error) => {
+      toast({ title: "Ошибка", description: error.message, variant: "destructive" });
     },
   });
 
@@ -149,6 +174,8 @@ function PurchaseForm({ item, onSuccess }: { item: InventoryItem; onSuccess: () 
         <Label>Количество (шт)</Label>
         <Input
           type="number"
+          inputMode="numeric"
+          pattern="[0-9]*"
           value={quantity}
           onChange={(e) => setQuantity(e.target.value)}
           placeholder="Введите количество"
@@ -159,6 +186,8 @@ function PurchaseForm({ item, onSuccess }: { item: InventoryItem; onSuccess: () 
         <Label>Цена за единицу (с)</Label>
         <Input
           type="number"
+          inputMode="numeric"
+          pattern="[0-9]*"
           value={pricePerUnit}
           onChange={(e) => setPricePerUnit(e.target.value)}
           placeholder="Введите цену"

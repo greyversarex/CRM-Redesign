@@ -218,6 +218,8 @@ function RecordForm({ onSuccess }: { onSuccess: () => void }) {
         </Label>
         <Input
           type="number"
+          inputMode="numeric"
+          pattern="[0-9]*"
           min="1"
           value={patientCount}
           onChange={(e) => setPatientCount(parseInt(e.target.value) || 1)}
@@ -278,6 +280,8 @@ function CompleteRecordDialog({
             </Label>
             <Input
               type="number"
+              inputMode="numeric"
+              pattern="[0-9]*"
               min="1"
               value={patientCount}
               onChange={(e) => setPatientCount(parseInt(e.target.value) || 1)}
@@ -285,13 +289,14 @@ function CompleteRecordDialog({
             />
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
             Отмена
           </Button>
           <Button 
             onClick={() => onComplete(record.id, patientCount)}
             data-testid="button-confirm-complete"
+            className="w-full sm:w-auto"
           >
             <Check className="h-4 w-4 mr-2" />
             Выполнить
@@ -387,8 +392,14 @@ export default function EmployeeDashboard() {
   const pendingAllRecords = allRecords.filter(r => r.status === "pending");
 
   const completeMutation = useMutation({
-    mutationFn: ({ id, patientCount }: { id: string; patientCount: number }) =>
-      apiRequest("POST", `/api/records/${id}/complete`, { patientCount }),
+    mutationFn: async ({ id, patientCount }: { id: string; patientCount: number }) => {
+      const response = await apiRequest("POST", `/api/records/${id}/complete`, { patientCount });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || "Ошибка выполнения записи");
+      }
+      return response;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/records"] });
       queryClient.invalidateQueries({ queryKey: ["/api/incomes"] });
@@ -396,8 +407,8 @@ export default function EmployeeDashboard() {
       toast({ title: "Запись выполнена" });
       setCompleteRecord(null);
     },
-    onError: () => {
-      toast({ title: "Ошибка", variant: "destructive" });
+    onError: (error: Error) => {
+      toast({ title: "Ошибка", description: error.message, variant: "destructive" });
     },
   });
 
@@ -406,7 +417,7 @@ export default function EmployeeDashboard() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <h1 className="text-2xl font-bold" data-testid="text-employee-title">Все записи</h1>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

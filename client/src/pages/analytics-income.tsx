@@ -164,6 +164,8 @@ export default function AnalyticsIncomePage() {
                       <Label>Сумма</Label>
                       <Input
                         type="number"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         value={newIncome.amount}
                         onChange={(e) => setNewIncome({ ...newIncome, amount: e.target.value })}
                         placeholder="Сумма"
