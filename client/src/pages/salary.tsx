@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { format, startOfMonth, endOfMonth, subMonths, startOfYear } from "date-fns";
+import { format, startOfMonth, endOfMonth, subMonths, startOfYear, startOfWeek, endOfWeek } from "date-fns";
 import { ru } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -173,6 +173,12 @@ export default function SalaryPage() {
     setEndDate(now);
   };
 
+  const setThisWeek = () => {
+    const now = new Date();
+    setStartDate(startOfWeek(now, { weekStartsOn: 1 }));
+    setEndDate(endOfWeek(now, { weekStartsOn: 1 }));
+  };
+
   const totalSalary = data?.employees.reduce((sum, e) => sum + e.totalSalary, 0) || 0;
 
   return (
@@ -193,6 +199,9 @@ export default function SalaryPage() {
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" onClick={setToday} data-testid="button-today">
               Сегодня
+            </Button>
+            <Button variant="outline" size="sm" onClick={setThisWeek} data-testid="button-this-week">
+              За неделю
             </Button>
             <Button variant="outline" size="sm" onClick={setThisMonth} data-testid="button-this-month">
               Этот месяц

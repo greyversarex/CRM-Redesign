@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { format, startOfMonth, endOfMonth, subMonths, addMonths, startOfYear, endOfYear, startOfDay, endOfDay, parseISO } from "date-fns";
+import { format, startOfMonth, endOfMonth, subMonths, addMonths, startOfYear, endOfYear, startOfDay, endOfDay, parseISO, startOfWeek, endOfWeek } from "date-fns";
 import { ru } from "date-fns/locale";
 import { Calendar as CalendarIcon, TrendingUp, TrendingDown, DollarSign, Users, Download, FileSpreadsheet, FileText, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -57,6 +57,12 @@ export default function AnalyticsPage() {
   const setThisYear = () => {
     setStartDate(startOfYear(new Date()));
     setEndDate(endOfYear(new Date()));
+  };
+  
+  const setThisWeek = () => {
+    const now = new Date();
+    setStartDate(startOfWeek(now, { weekStartsOn: 1 }));
+    setEndDate(endOfWeek(now, { weekStartsOn: 1 }));
   };
   
   const handleStartDateChange = (date: Date | undefined) => {
@@ -220,6 +226,9 @@ export default function AnalyticsPage() {
             </Popover>
           </div>
           <div className="flex flex-wrap gap-2">
+            <Button variant="secondary" size="sm" onClick={setThisWeek} data-testid="button-this-week">
+              За неделю
+            </Button>
             <Button variant="secondary" size="sm" onClick={setThisMonth} data-testid="button-this-month">
               Этот месяц
             </Button>
