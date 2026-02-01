@@ -17,7 +17,6 @@ function AddItemForm({ onSuccess }: { onSuccess: () => void }) {
   const { toast } = useToast();
   const [name, setName] = useState("");
   const [quantity, setQuantity] = useState("0");
-  const [unit, setUnit] = useState("шт");
 
   const mutation = useMutation({
     mutationFn: async (data: any) => apiRequest("POST", "/api/inventory", data),
@@ -33,7 +32,7 @@ function AddItemForm({ onSuccess }: { onSuccess: () => void }) {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    mutation.mutate({ name, quantity: parseInt(quantity) || 0, unit });
+    mutation.mutate({ name, quantity: parseInt(quantity) || 0, unit: "шт" });
   }
 
   return (
@@ -57,15 +56,6 @@ function AddItemForm({ onSuccess }: { onSuccess: () => void }) {
           data-testid="input-item-quantity"
         />
       </div>
-      <div className="space-y-2">
-        <Label>Единица измерения</Label>
-        <Input
-          value={unit}
-          onChange={(e) => setUnit(e.target.value)}
-          placeholder="шт"
-          data-testid="input-item-unit"
-        />
-      </div>
       <Button type="submit" className="w-full" disabled={mutation.isPending} data-testid="button-save-item">
         {mutation.isPending ? "Сохранение..." : "Добавить"}
       </Button>
@@ -76,7 +66,6 @@ function AddItemForm({ onSuccess }: { onSuccess: () => void }) {
 function EditQuantityForm({ item, onSuccess }: { item: InventoryItem; onSuccess: () => void }) {
   const { toast } = useToast();
   const [quantity, setQuantity] = useState(item.quantity.toString());
-  const [note, setNote] = useState("");
 
   const mutation = useMutation({
     mutationFn: async (data: any) => apiRequest("PATCH", `/api/inventory/${item.id}/quantity`, data),
@@ -97,29 +86,20 @@ function EditQuantityForm({ item, onSuccess }: { item: InventoryItem; onSuccess:
     mutation.mutate({
       quantity: parseInt(quantity) || 0,
       changeType: "manual",
-      note: note || `Изменение с ${item.quantity} на ${quantity}`,
+      note: `Изменение с ${item.quantity} на ${quantity}`,
     });
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label>Текущее количество: {item.quantity} {item.unit}</Label>
+        <Label>Текущее количество: {item.quantity} шт</Label>
         <Input
           type="number"
           value={quantity}
           onChange={(e) => setQuantity(e.target.value)}
           placeholder="Новое количество"
           data-testid="input-edit-quantity"
-        />
-      </div>
-      <div className="space-y-2">
-        <Label>Причина изменения (необязательно)</Label>
-        <Input
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          placeholder="Например: списание, коррекция..."
-          data-testid="input-edit-note"
         />
       </div>
       <Button type="submit" className="w-full" disabled={mutation.isPending} data-testid="button-save-quantity">
@@ -162,7 +142,7 @@ function PurchaseForm({ item, onSuccess }: { item: InventoryItem; onSuccess: () 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label>Количество ({item.unit})</Label>
+        <Label>Количество (шт)</Label>
         <Input
           type="number"
           value={quantity}
@@ -186,7 +166,7 @@ function PurchaseForm({ item, onSuccess }: { item: InventoryItem; onSuccess: () 
           <p className="text-sm text-muted-foreground">Итого к оплате:</p>
           <p className="text-xl font-bold">{total} с.</p>
           <p className="text-xs text-muted-foreground">
-            После покупки: {item.quantity} + {quantity || 0} = {item.quantity + (parseInt(quantity) || 0)} {item.unit}
+            После покупки: {item.quantity} + {quantity || 0} = {item.quantity + (parseInt(quantity) || 0)} шт
           </p>
         </div>
       )}
@@ -273,7 +253,7 @@ export default function InventoryPage() {
                     </button>
                   </TableCell>
                   <TableCell className="text-right font-medium">
-                    {item.quantity} {item.unit}
+                    {item.quantity} шт
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">

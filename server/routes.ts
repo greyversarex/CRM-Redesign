@@ -611,7 +611,7 @@ export async function registerRoutes(
       const expense = await storage.createExpense({
         date: purchaseDate,
         time,
-        name: `Закупка: ${item.name} (${quantity} ${item.unit} × ${pricePerUnit})`,
+        name: `Закупка: ${item.name} (${quantity} шт × ${pricePerUnit})`,
         amount: totalCost,
         reminder: false,
       });
@@ -622,7 +622,7 @@ export async function registerRoutes(
         req.params.id,
         newQuantity,
         "purchase",
-        `Закупка ${quantity} ${item.unit} по ${pricePerUnit} = ${totalCost}`,
+        `Закупка ${quantity} шт по ${pricePerUnit} = ${totalCost}`,
         expense.id
       );
       
