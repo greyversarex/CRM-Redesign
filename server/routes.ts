@@ -543,6 +543,106 @@ export async function registerRoutes(
     res.json({ success: true });
   });
 
+  // Inventory endpoints
+  app.get("/api/inventory", requireAdmin, async (req, res) => {
+    const items = await storage.getAllInventoryItems();
+    res.json(items);
+  });
+
+  app.get("/api/inventory/:id", requireAdmin, async (req, res) => {
+    const item = await storage.getInventoryItem(req.params.id);
+    if (!item) {
+      return res.status(404).json({ error: "Item not found" });
+    }
+    res.json(item);
+  });
+
+  app.post("/api/inventory", requireAdmin, async (req, res) => {
+    try {
+      const { name, quantity, unit } = req.body;
+      if (!name) {
+        return res.status(400).json({ error: "Name is required" });
+      }
+      const item = await storage.createInventoryItem({
+        name,
+        quantity: quantity || 0,
+        unit: unit || "шт",
+      });
+      res.json(item);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to create item" });
+    }
+  });
+
+  app.patch("/api/inventory/:id/quantity", requireAdmin, async (req, res) => {
+    const { quantity, changeType, note } = req.body;
+    if (quantity === undefined || !changeType) {
+      return res.status(400).json({ error: "Quantity and changeType are required" });
+    }
+    const item = await storage.updateInventoryItemQuantity(
+      req.params.id,
+      quantity,
+      changeType,
+      note
+    );
+    if (!item) {
+      return res.status(404).json({ error: "Item not found" });
+    }
+    res.json(item);
+  });
+
+  app.post("/api/inventory/:id/purchase", requireAdmin, async (req, res) => {
+    try {
+      const { quantity, pricePerUnit, date } = req.body;
+      if (!quantity || !pricePerUnit) {
+        return res.status(400).json({ error: "Quantity and pricePerUnit are required" });
+      }
+      
+      const item = await storage.getInventoryItem(req.params.id);
+      if (!item) {
+        return res.status(404).json({ error: "Item not found" });
+      }
+      
+      const totalCost = quantity * pricePerUnit;
+      const purchaseDate = date || new Date().toISOString().split("T")[0];
+      const time = new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+      
+      // Create expense record
+      const expense = await storage.createExpense({
+        date: purchaseDate,
+        time,
+        name: `Закупка: ${item.name} (${quantity} ${item.unit} × ${pricePerUnit})`,
+        amount: totalCost,
+        reminder: false,
+      });
+      
+      // Update inventory quantity with reference to expense
+      const newQuantity = item.quantity + quantity;
+      const updated = await storage.updateInventoryItemQuantity(
+        req.params.id,
+        newQuantity,
+        "purchase",
+        `Закупка ${quantity} ${item.unit} по ${pricePerUnit} = ${totalCost}`,
+        expense.id
+      );
+      
+      res.json({ item: updated, expense });
+    } catch (error) {
+      console.error("Purchase error:", error);
+      res.status(400).json({ error: "Failed to process purchase" });
+    }
+  });
+
+  app.get("/api/inventory/:id/history", requireAdmin, async (req, res) => {
+    const history = await storage.getInventoryHistory(req.params.id);
+    res.json(history);
+  });
+
+  app.delete("/api/inventory/:id", requireAdmin, async (req, res) => {
+    await storage.deleteInventoryItem(req.params.id);
+    res.json({ success: true });
+  });
+
   app.get("/api/analytics/month", requireAdmin, async (req, res) => {
     const { start, end } = req.query;
     if (!start || !end) {
