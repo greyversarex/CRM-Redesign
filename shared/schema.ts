@@ -121,6 +121,42 @@ export const expenses = pgTable("expenses", {
   reminder: boolean("reminder").notNull().default(false),
 });
 
+// Inventory items table (warehouse/stock)
+export const inventoryItems = pgTable("inventory_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  quantity: integer("quantity").notNull().default(0),
+  unit: text("unit").notNull().default("шт"),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
+export const inventoryItemsRelations = relations(inventoryItems, ({ many }) => ({
+  history: many(inventoryHistory),
+}));
+
+// Inventory history table (tracks all changes)
+export const inventoryHistory = pgTable("inventory_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  itemId: varchar("item_id").notNull().references(() => inventoryItems.id, { onDelete: "cascade" }),
+  previousQuantity: integer("previous_quantity").notNull(),
+  newQuantity: integer("new_quantity").notNull(),
+  changeType: text("change_type").notNull(), // "manual", "purchase", "initial"
+  note: text("note"),
+  expenseId: varchar("expense_id").references(() => expenses.id),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
+export const inventoryHistoryRelations = relations(inventoryHistory, ({ one }) => ({
+  item: one(inventoryItems, {
+    fields: [inventoryHistory.itemId],
+    references: [inventoryItems.id],
+  }),
+  expense: one(expenses, {
+    fields: [inventoryHistory.expenseId],
+    references: [expenses.id],
+  }),
+}));
+
 // Push subscriptions table for PWA notifications
 export const pushSubscriptions = pgTable("push_subscriptions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -147,6 +183,8 @@ export const insertRecordCompletionSchema = createInsertSchema(recordCompletions
 export const insertIncomeSchema = createInsertSchema(incomes).omit({ id: true });
 export const insertExpenseSchema = createInsertSchema(expenses).omit({ id: true });
 export const insertPushSubscriptionSchema = createInsertSchema(pushSubscriptions).omit({ id: true, createdAt: true });
+export const insertInventoryItemSchema = createInsertSchema(inventoryItems).omit({ id: true, createdAt: true });
+export const insertInventoryHistorySchema = createInsertSchema(inventoryHistory).omit({ id: true, createdAt: true });
 
 // Login schema
 export const loginSchema = z.object({
@@ -171,6 +209,10 @@ export type Expense = typeof expenses.$inferSelect;
 export type InsertExpense = z.infer<typeof insertExpenseSchema>;
 export type PushSubscription = typeof pushSubscriptions.$inferSelect;
 export type InsertPushSubscription = z.infer<typeof insertPushSubscriptionSchema>;
+export type InventoryItem = typeof inventoryItems.$inferSelect;
+export type InsertInventoryItem = z.infer<typeof insertInventoryItemSchema>;
+export type InventoryHistory = typeof inventoryHistory.$inferSelect;
+export type InsertInventoryHistory = z.infer<typeof insertInventoryHistorySchema>;
 
 // Extended types with relations
 export type RecordCompletionWithEmployee = RecordCompletion & {

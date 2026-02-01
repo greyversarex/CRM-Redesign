@@ -1,5 +1,6 @@
 import {
   users, clients, services, records, incomes, expenses, pushSubscriptions, recordCompletions,
+  inventoryItems, inventoryHistory,
   type User, type InsertUser,
   type Client, type InsertClient,
   type Service, type InsertService,
@@ -10,6 +11,8 @@ import {
   type RecordWithRelations,
   type IncomeWithRelations,
   type PushSubscription, type InsertPushSubscription,
+  type InventoryItem, type InsertInventoryItem,
+  type InventoryHistory, type InsertInventoryHistory,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, sql, isNull, or } from "drizzle-orm";
@@ -113,6 +116,14 @@ export interface IStorage {
   
   // Get all records (visible to all employees)
   getAllRecords(date?: string): Promise<RecordWithRelations[]>;
+  
+  // Inventory methods
+  getAllInventoryItems(): Promise<InventoryItem[]>;
+  getInventoryItem(id: string): Promise<InventoryItem | undefined>;
+  createInventoryItem(item: InsertInventoryItem): Promise<InventoryItem>;
+  updateInventoryItemQuantity(id: string, newQuantity: number, changeType: string, note?: string, expenseId?: string): Promise<InventoryItem | undefined>;
+  deleteInventoryItem(id: string): Promise<void>;
+  getInventoryHistory(itemId: string): Promise<(InventoryHistory & { expense?: Expense | null })[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -970,6 +981,79 @@ export class DatabaseStorage implements IStorage {
     }
 
     return recordsWithCompletions;
+  }
+
+  // Inventory methods
+  async getAllInventoryItems(): Promise<InventoryItem[]> {
+    return await db.select().from(inventoryItems).orderBy(inventoryItems.name);
+  }
+
+  async getInventoryItem(id: string): Promise<InventoryItem | undefined> {
+    const [item] = await db.select().from(inventoryItems).where(eq(inventoryItems.id, id));
+    return item || undefined;
+  }
+
+  async createInventoryItem(item: InsertInventoryItem): Promise<InventoryItem> {
+    const [created] = await db.insert(inventoryItems).values(item).returning();
+    
+    // Add initial history entry
+    await db.insert(inventoryHistory).values({
+      itemId: created.id,
+      previousQuantity: 0,
+      newQuantity: item.quantity || 0,
+      changeType: "initial",
+      note: "Создание товара",
+    });
+    
+    return created;
+  }
+
+  async updateInventoryItemQuantity(
+    id: string, 
+    newQuantity: number, 
+    changeType: string, 
+    note?: string, 
+    expenseId?: string
+  ): Promise<InventoryItem | undefined> {
+    const current = await this.getInventoryItem(id);
+    if (!current) return undefined;
+    
+    // Update quantity
+    const [updated] = await db
+      .update(inventoryItems)
+      .set({ quantity: newQuantity })
+      .where(eq(inventoryItems.id, id))
+      .returning();
+    
+    // Add history entry
+    await db.insert(inventoryHistory).values({
+      itemId: id,
+      previousQuantity: current.quantity,
+      newQuantity,
+      changeType,
+      note,
+      expenseId,
+    });
+    
+    return updated;
+  }
+
+  async deleteInventoryItem(id: string): Promise<void> {
+    await db.delete(inventoryItems).where(eq(inventoryItems.id, id));
+  }
+
+  async getInventoryHistory(itemId: string): Promise<(InventoryHistory & { expense?: Expense | null })[]> {
+    const result = await db
+      .select()
+      .from(inventoryHistory)
+      .leftJoin(expenses, eq(inventoryHistory.expenseId, expenses.id))
+      .where(eq(inventoryHistory.itemId, itemId))
+      .orderBy(sql`${inventoryHistory.createdAt} DESC`);
+    
+    return result.map(r => ({
+      ...r.inventory_history,
+      expense: r.expenses || null,
+    }));
   }
 }
 
