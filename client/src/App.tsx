@@ -24,6 +24,8 @@ import AnalyticsExpensePage from "@/pages/analytics-expense";
 import AnalyticsClientsPage from "@/pages/analytics-clients";
 import EmployeeDashboard from "@/pages/employee-dashboard";
 import EmployeeRecordsPage from "@/pages/employee-records";
+import InventoryPage from "@/pages/inventory";
+import InventoryHistoryPage from "@/pages/inventory-history";
 import NotFound from "@/pages/not-found";
 import { Loader2 } from "lucide-react";
 
@@ -38,6 +40,8 @@ function AdminRouter() {
         <Route path="/services" component={ServicesPage} />
         <Route path="/employees" component={EmployeesPage} />
         <Route path="/employees/:id/analytics" component={EmployeeAnalyticsPage} />
+        <Route path="/inventory" component={InventoryPage} />
+        <Route path="/inventory/:id" component={InventoryHistoryPage} />
         <Route path="/analytics" component={AnalyticsPage} />
         <Route path="/analytics/income" component={AnalyticsIncomePage} />
         <Route path="/analytics/expense" component={AnalyticsExpensePage} />
