@@ -157,6 +157,20 @@ export const inventoryHistoryRelations = relations(inventoryHistory, ({ one }) =
   }),
 }));
 
+// Service payment settings (salary deductions per service)
+export const servicePayments = pgTable("service_payments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  serviceId: varchar("service_id").notNull().references(() => services.id, { onDelete: "cascade" }).unique(),
+  paymentPerPatient: integer("payment_per_patient").notNull().default(0),
+});
+
+export const servicePaymentsRelations = relations(servicePayments, ({ one }) => ({
+  service: one(services, {
+    fields: [servicePayments.serviceId],
+    references: [services.id],
+  }),
+}));
+
 // Push subscriptions table for PWA notifications
 export const pushSubscriptions = pgTable("push_subscriptions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -185,6 +199,7 @@ export const insertExpenseSchema = createInsertSchema(expenses).omit({ id: true 
 export const insertPushSubscriptionSchema = createInsertSchema(pushSubscriptions).omit({ id: true, createdAt: true });
 export const insertInventoryItemSchema = createInsertSchema(inventoryItems).omit({ id: true, createdAt: true });
 export const insertInventoryHistorySchema = createInsertSchema(inventoryHistory).omit({ id: true, createdAt: true });
+export const insertServicePaymentSchema = createInsertSchema(servicePayments).omit({ id: true });
 
 // Login schema
 export const loginSchema = z.object({
@@ -213,6 +228,8 @@ export type InventoryItem = typeof inventoryItems.$inferSelect;
 export type InsertInventoryItem = z.infer<typeof insertInventoryItemSchema>;
 export type InventoryHistory = typeof inventoryHistory.$inferSelect;
 export type InsertInventoryHistory = z.infer<typeof insertInventoryHistorySchema>;
+export type ServicePayment = typeof servicePayments.$inferSelect;
+export type InsertServicePayment = z.infer<typeof insertServicePaymentSchema>;
 
 // Extended types with relations
 export type RecordCompletionWithEmployee = RecordCompletion & {

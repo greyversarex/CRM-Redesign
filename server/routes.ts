@@ -739,6 +739,49 @@ export async function registerRoutes(
     }
   });
 
+  // Service payments (salary settings) endpoints
+  app.get("/api/service-payments", requireAdmin, async (req, res) => {
+    try {
+      const payments = await storage.getAllServicePayments();
+      res.json(payments);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch service payments" });
+    }
+  });
+
+  app.put("/api/service-payments/:serviceId", requireAdmin, async (req, res) => {
+    try {
+      const { serviceId } = req.params;
+      const { paymentPerPatient } = req.body;
+      
+      if (typeof paymentPerPatient !== "number" || paymentPerPatient < 0) {
+        return res.status(400).json({ error: "Invalid payment amount" });
+      }
+      
+      const payment = await storage.upsertServicePayment(serviceId, paymentPerPatient);
+      res.json(payment);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update service payment" });
+    }
+  });
+
+  // Salary data endpoint
+  app.get("/api/salary", requireAdmin, async (req, res) => {
+    try {
+      const { start, end } = req.query;
+      
+      if (!start || !end) {
+        return res.status(400).json({ error: "Start and end dates required" });
+      }
+      
+      const data = await storage.getSalaryData(start as string, end as string);
+      res.json(data);
+    } catch (error) {
+      console.error("Salary data error:", error);
+      res.status(500).json({ error: "Failed to fetch salary data" });
+    }
+  });
+
   // Push notification endpoints
   app.get("/api/push/public-key", (req, res) => {
     res.json({ publicKey: getVapidPublicKey() });

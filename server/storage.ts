@@ -1,6 +1,6 @@
 import {
   users, clients, services, records, incomes, expenses, pushSubscriptions, recordCompletions,
-  inventoryItems, inventoryHistory,
+  inventoryItems, inventoryHistory, servicePayments,
   type User, type InsertUser,
   type Client, type InsertClient,
   type Service, type InsertService,
@@ -13,6 +13,7 @@ import {
   type PushSubscription, type InsertPushSubscription,
   type InventoryItem, type InsertInventoryItem,
   type InventoryHistory, type InsertInventoryHistory,
+  type ServicePayment, type InsertServicePayment,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, sql, isNull, or } from "drizzle-orm";
@@ -124,6 +125,21 @@ export interface IStorage {
   updateInventoryItemQuantity(id: string, newQuantity: number, changeType: string, note?: string, expenseId?: string): Promise<InventoryItem | undefined>;
   deleteInventoryItem(id: string): Promise<void>;
   getInventoryHistory(itemId: string): Promise<(InventoryHistory & { expense?: Expense | null })[]>;
+  
+  // Service payment settings methods
+  getAllServicePayments(): Promise<(ServicePayment & { service: Service })[]>;
+  getServicePayment(serviceId: string): Promise<ServicePayment | undefined>;
+  upsertServicePayment(serviceId: string, paymentPerPatient: number): Promise<ServicePayment>;
+  
+  // Salary calculation
+  getSalaryData(startDate: string, endDate: string): Promise<{
+    employees: {
+      id: string;
+      fullName: string;
+      byService: { serviceId: string; serviceName: string; patientCount: number; payment: number }[];
+      totalSalary: number;
+    }[];
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1054,6 +1070,115 @@ export class DatabaseStorage implements IStorage {
       ...r.inventory_history,
       expense: r.expenses || null,
     }));
+  }
+
+  // Service payment settings methods
+  async getAllServicePayments(): Promise<(ServicePayment & { service: Service })[]> {
+    const result = await db
+      .select()
+      .from(servicePayments)
+      .innerJoin(services, eq(servicePayments.serviceId, services.id));
+    
+    return result.map(r => ({
+      ...r.service_payments,
+      service: r.services,
+    }));
+  }
+
+  async getServicePayment(serviceId: string): Promise<ServicePayment | undefined> {
+    const [payment] = await db
+      .select()
+      .from(servicePayments)
+      .where(eq(servicePayments.serviceId, serviceId));
+    return payment || undefined;
+  }
+
+  async upsertServicePayment(serviceId: string, paymentPerPatient: number): Promise<ServicePayment> {
+    const existing = await this.getServicePayment(serviceId);
+    
+    if (existing) {
+      const [updated] = await db
+        .update(servicePayments)
+        .set({ paymentPerPatient })
+        .where(eq(servicePayments.serviceId, serviceId))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db
+        .insert(servicePayments)
+        .values({ serviceId, paymentPerPatient })
+        .returning();
+      return created;
+    }
+  }
+
+  // Salary calculation
+  async getSalaryData(startDate: string, endDate: string) {
+    // Get all completions in date range with service info
+    const completions = await db
+      .select({
+        employeeId: recordCompletions.employeeId,
+        employeeName: users.fullName,
+        serviceId: records.serviceId,
+        serviceName: services.name,
+        patientCount: recordCompletions.patientCount,
+        recordDate: records.date,
+      })
+      .from(recordCompletions)
+      .innerJoin(users, eq(recordCompletions.employeeId, users.id))
+      .innerJoin(records, eq(recordCompletions.recordId, records.id))
+      .innerJoin(services, eq(records.serviceId, services.id))
+      .where(and(gte(records.date, startDate), lte(records.date, endDate)));
+
+    // Get all service payment settings
+    const allPayments = await this.getAllServicePayments();
+    const paymentMap = new Map<string, number>();
+    for (const p of allPayments) {
+      paymentMap.set(p.serviceId, p.paymentPerPatient);
+    }
+
+    // Group by employee
+    const employeeMap = new Map<string, {
+      id: string;
+      fullName: string;
+      byService: Map<string, { serviceId: string; serviceName: string; patientCount: number; payment: number }>;
+    }>();
+
+    for (const c of completions) {
+      if (!employeeMap.has(c.employeeId)) {
+        employeeMap.set(c.employeeId, {
+          id: c.employeeId,
+          fullName: c.employeeName,
+          byService: new Map(),
+        });
+      }
+      
+      const employee = employeeMap.get(c.employeeId)!;
+      const paymentPerPatient = paymentMap.get(c.serviceId) || 0;
+      
+      if (!employee.byService.has(c.serviceId)) {
+        employee.byService.set(c.serviceId, {
+          serviceId: c.serviceId,
+          serviceName: c.serviceName,
+          patientCount: 0,
+          payment: 0,
+        });
+      }
+      
+      const serviceData = employee.byService.get(c.serviceId)!;
+      serviceData.patientCount += c.patientCount;
+      serviceData.payment += c.patientCount * paymentPerPatient;
+    }
+
+    // Convert to array format
+    const employees = Array.from(employeeMap.values()).map(e => ({
+      id: e.id,
+      fullName: e.fullName,
+      byService: Array.from(e.byService.values()),
+      totalSalary: Array.from(e.byService.values()).reduce((sum, s) => sum + s.payment, 0),
+    }));
+
+    return { employees };
   }
 }
 

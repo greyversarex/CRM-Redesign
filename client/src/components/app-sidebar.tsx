@@ -1,5 +1,5 @@
 import { useLocation, Link } from "wouter";
-import { CalendarRange, Users2, Briefcase, LineChart, UserCog, Package, LogOut, Sparkles } from "lucide-react";
+import { CalendarRange, Users2, Briefcase, LineChart, UserCog, Package, Wallet, LogOut, Sparkles } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import {
   Sidebar,
@@ -23,6 +23,7 @@ const allMenuItems = [
   { title: "Аналитика", url: "/analytics", icon: LineChart, gradient: "from-amber-400 to-orange-500", shadow: "shadow-amber-500/30", roles: ["admin"] },
   { title: "Сотрудники", url: "/employees", icon: UserCog, gradient: "from-violet-400 to-purple-500", shadow: "shadow-violet-500/30", roles: ["admin", "manager"] },
   { title: "Склад", url: "/inventory", icon: Package, gradient: "from-cyan-400 to-sky-500", shadow: "shadow-cyan-500/30", roles: ["admin"] },
+  { title: "Зарплата", url: "/salary", icon: Wallet, gradient: "from-lime-400 to-green-500", shadow: "shadow-lime-500/30", roles: ["admin"] },
 ];
 
 export function AppSidebar() {
