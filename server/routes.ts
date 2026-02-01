@@ -604,8 +604,11 @@ export async function registerRoutes(
       }
       
       const totalCost = quantity * pricePerUnit;
-      const purchaseDate = date || new Date().toISOString().split("T")[0];
-      const time = new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+      // Use local date with timezone offset to get correct local date
+      const now = new Date();
+      const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+      const purchaseDate = date || localDate.toISOString().split("T")[0];
+      const time = now.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Dushanbe" });
       
       // Create expense record
       const expense = await storage.createExpense({

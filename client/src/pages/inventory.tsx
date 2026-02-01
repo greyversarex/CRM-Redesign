@@ -133,9 +133,13 @@ function PurchaseForm({ item, onSuccess }: { item: InventoryItem; onSuccess: () 
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    // Get local date in YYYY-MM-DD format
+    const now = new Date();
+    const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
     mutation.mutate({
       quantity: parseInt(quantity) || 0,
       pricePerUnit: parseInt(pricePerUnit) || 0,
+      date: localDate,
     });
   }
 
