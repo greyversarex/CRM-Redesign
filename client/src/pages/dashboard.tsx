@@ -266,7 +266,10 @@ function RecordCard({ record }: { record: RecordWithRelations }) {
           {statusLabels[effectiveStatus]}
         </Badge>
       </div>
-      <p className="text-xs text-muted-foreground mt-1">{record.client?.fullName || "Без клиента"}</p>
+      <p className="text-xs text-muted-foreground mt-1">
+        {record.client?.fullName || "Без клиента"}
+        {record.client?.phone && <span className="ml-2">{record.client.phone}</span>}
+      </p>
       <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
         <UserIcon className="h-3 w-3 shrink-0" />
         <span className="truncate">{completedByNames || "—"}</span>
