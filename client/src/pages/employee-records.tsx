@@ -41,14 +41,14 @@ function QuickAddClientForm({ onSuccess, onClientCreated }: { onSuccess: () => v
   });
 
   function handleAddClient() {
-    if (!fullName.trim()) return;
-    mutation.mutate({ fullName, phone: phone || null });
+    if (!fullName.trim() && !phone.trim()) return;
+    mutation.mutate({ fullName: fullName || null, phone: phone || null });
   }
 
   return (
     <div className="space-y-3 p-3 border rounded-lg bg-muted/30">
       <div className="space-y-2">
-        <Label>ФИО клиента</Label>
+        <Label>ФИО клиента (необязательно)</Label>
         <Input
           value={fullName}
           onChange={(e) => setFullName(e.target.value)}
@@ -138,7 +138,7 @@ function RecordForm({
                   {clients.map((client) => (
                     <CommandItem
                       key={client.id}
-                      value={client.fullName}
+                      value={client.fullName || client.phone || client.id}
                       onSelect={() => {
                         setClientId(client.id);
                         setClientOpen(false);
@@ -147,8 +147,8 @@ function RecordForm({
                       <Check
                         className={`mr-2 h-4 w-4 ${clientId === client.id ? "opacity-100" : "opacity-0"}`}
                       />
-                      {client.fullName}
-                      {client.phone && <span className="ml-2 text-xs text-muted-foreground">{client.phone}</span>}
+                      {client.fullName || client.phone || "Без имени"}
+                      {client.fullName && client.phone && <span className="ml-2 text-xs text-muted-foreground">{client.phone}</span>}
                     </CommandItem>
                   ))}
                 </CommandGroup>
