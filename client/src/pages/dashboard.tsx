@@ -43,14 +43,14 @@ function QuickAddClientForm({ onSuccess, onClientCreated }: { onSuccess: () => v
   });
 
   function handleAddClient() {
-    if (!fullName.trim()) return;
-    mutation.mutate({ fullName, phone: phone || null });
+    if (!fullName.trim() && !phone.trim()) return;
+    mutation.mutate({ fullName: fullName || null, phone: phone || null });
   }
 
   return (
     <div className="space-y-3 p-3 border rounded-lg bg-muted/30">
       <div className="space-y-2">
-        <Label>ФИО клиента</Label>
+        <Label>ФИО клиента (необязательно)</Label>
         <Input
           value={fullName}
           onChange={(e) => setFullName(e.target.value)}
@@ -59,7 +59,7 @@ function QuickAddClientForm({ onSuccess, onClientCreated }: { onSuccess: () => v
         />
       </div>
       <div className="space-y-2">
-        <Label>Телефон (необязательно)</Label>
+        <Label>Телефон</Label>
         <Input
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
@@ -140,7 +140,7 @@ function QuickRecordForm({ date, onSuccess }: { date: string; onSuccess: () => v
                   {clients.map((client) => (
                     <CommandItem
                       key={client.id}
-                      value={client.fullName}
+                      value={client.fullName || client.phone || client.id}
                       onSelect={() => {
                         setClientId(client.id);
                         setClientOpen(false);
@@ -149,7 +149,7 @@ function QuickRecordForm({ date, onSuccess }: { date: string; onSuccess: () => v
                       <Check
                         className={`mr-2 h-4 w-4 ${clientId === client.id ? "opacity-100" : "opacity-0"}`}
                       />
-                      {client.fullName}
+                      {client.fullName || client.phone || "Без имени"}
                     </CommandItem>
                   ))}
                 </CommandGroup>
