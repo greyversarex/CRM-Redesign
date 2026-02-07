@@ -12,7 +12,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { eachDayOfInterval, isSameDay } from "date-fns";
 
 interface ExpenseItem {
   id: string;
@@ -28,7 +30,6 @@ interface DetailedExpenseData {
   totalExpense: number;
 }
 
-const COLORS = ["#EF4444", "#F59E0B", "#8B5CF6", "#EC4899", "#06B6D4", "#84CC16", "#10B981", "#3B82F6"];
 
 export default function AnalyticsExpensePage() {
   const [, setLocation] = useLocation();
@@ -80,9 +81,24 @@ export default function AnalyticsExpensePage() {
     });
   };
 
-  const chartData = data?.byCategory
-    ? Object.entries(data.byCategory).map(([name, value]) => ({ name, value }))
+  const categoryList = data?.byCategory
+    ? Object.entries(data.byCategory)
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value)
     : [];
+
+  const dailyTrendData = (() => {
+    if (!data?.byDate) return [];
+    const start = startOfMonth(currentMonth);
+    const end = endOfMonth(currentMonth);
+    const allDays = eachDayOfInterval({ start, end });
+    return allDays.map((day) => {
+      const dateKey = format(day, "yyyy-MM-dd");
+      const expenses = data.byDate[dateKey] || [];
+      const total = expenses.reduce((sum, e) => sum + e.amount, 0);
+      return { date: format(day, "d"), fullDate: dateKey, amount: total };
+    });
+  })();
 
   const sortedDates = data?.byDate
     ? Object.keys(data.byDate).sort((a, b) => b.localeCompare(a))
@@ -137,43 +153,66 @@ export default function AnalyticsExpensePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card>
               <CardContent className="p-6">
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 mb-4">
                   <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-xl">
                     <TrendingDown className="h-6 w-6 text-red-600 dark:text-red-400" />
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Общий расход за месяц</p>
-                    <p className="text-3xl font-bold text-red-600">{data?.totalExpense || 0} с</p>
+                    <p className="text-3xl font-bold text-red-600" data-testid="text-total-expense">{data?.totalExpense || 0} с</p>
                   </div>
                 </div>
+                {dailyTrendData.length > 0 && (
+                  <ResponsiveContainer width="100%" height={120}>
+                    <AreaChart data={dailyTrendData}>
+                      <defs>
+                        <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#EF4444" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#EF4444" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <XAxis dataKey="date" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
+                      <YAxis hide />
+                      <Tooltip
+                        formatter={(value: number) => [`${value} с`, "Расход"]}
+                        labelFormatter={(label) => `${label} число`}
+                        contentStyle={{ fontSize: 12 }}
+                      />
+                      <Area type="monotone" dataKey="amount" stroke="#EF4444" strokeWidth={2} fill="url(#expenseGradient)" dot={false} activeDot={{ r: 3 }} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                )}
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="flex flex-col">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium">Расходы по категориям</CardTitle>
               </CardHeader>
-              <CardContent>
-                {chartData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={200}>
-                    <PieChart>
-                      <Pie
-                        data={chartData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={40}
-                        outerRadius={70}
-                        paddingAngle={2}
-                        dataKey="value"
-                      >
-                        {chartData.map((_, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value: number) => `${value} с`} />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
+              <CardContent className="flex-1 min-h-0">
+                {categoryList.length > 0 ? (
+                  <ScrollArea className="h-[200px]">
+                    <div className="space-y-2 pr-3">
+                      {categoryList.map((item, index) => {
+                        const maxValue = categoryList[0]?.value || 1;
+                        const percentage = Math.round((item.value / (data?.totalExpense || 1)) * 100);
+                        return (
+                          <div key={item.name} className="space-y-1" data-testid={`category-item-${index}`}>
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-sm truncate flex-1">{item.name}</span>
+                              <span className="text-sm font-medium text-red-600 whitespace-nowrap">{item.value} с ({percentage}%)</span>
+                            </div>
+                            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-red-500 rounded-full transition-all"
+                                style={{ width: `${(item.value / maxValue) * 100}%` }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </ScrollArea>
                 ) : (
                   <div className="flex items-center justify-center h-[200px] text-muted-foreground">
                     Нет данных
